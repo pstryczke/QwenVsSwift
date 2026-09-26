@@ -1,0 +1,2474 @@
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+							<style>
+								body {
+									background-color: white; /* Ensure the iframe has a white background */
+								}
+
+								
+							</style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASTRA // Procedural Galaxy Explorer</title>
+<style>
+:root{
+  --mono:"SF Mono","Cascadia Code","JetBrains Mono","Fira Code",Consolas,"Roboto Mono",monospace;
+  --panel:rgba(9,13,22,0.82);
+  --line:rgba(122,152,204,0.14);
+  --line2:rgba(150,180,230,0.30);
+  --text:#c7d2e4;
+  --dim:#64748e;
+  --faint:#3c485e;
+  --accent:#e2a655;
+  --accent2:#6f9fd4;
+  --good:#79c99a;
+  --warn:#e08a5a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#04060c}
+body{
+  color:var(--text);font-family:var(--mono);font-size:11px;
+  -webkit-user-select:none;user-select:none;
+}
+b{font-weight:600}
+.dim{color:var(--faint)}
+#app{position:fixed;inset:0}
+canvas{display:block}
+#cv-bg{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+#cv-main{position:absolute;inset:0;width:100%;height:100%;z-index:2;touch-action:none}
+#cv-sys{position:absolute;inset:0;width:100%;height:100%;z-index:3;touch-action:none}
+.hidden{display:none!important}
+button{font:inherit;color:inherit;background:none;border:none}
+:focus-visible{outline:1px solid var(--accent);outline-offset:2px}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:rgba(122,152,204,0.18)}
+::-webkit-scrollbar-track{background:transparent}
+
+.btn{
+  background:rgba(18,26,42,0.5);border:1px solid var(--line);color:#b9c6db;
+  font-size:9.5px;letter-spacing:0.16em;padding:6px 11px;cursor:pointer;white-space:nowrap;
+  transition:background .16s,border-color .16s,color .16s;
+}
+.btn:hover{background:rgba(30,42,66,0.65);border-color:var(--line2);color:#e8eef8}
+.btn:active{transform:translateY(0.5px)}
+.btn.active,.btn[aria-pressed="true"]{border-color:rgba(226,166,85,0.55);color:var(--accent);background:rgba(226,166,85,0.06)}
+.btn.primary{border-color:rgba(226,166,85,0.4);color:var(--accent)}
+.btn.primary:hover{background:rgba(226,166,85,0.12);color:#f3d9a8}
+.btn.icon{padding:4px 8px}
+.btn.sm{padding:4px 8px;font-size:9px}
+.btn.wide{width:100%}
+.btn:disabled{opacity:0.35;cursor:default}
+
+#topbar{
+  position:absolute;top:0;left:0;right:0;height:46px;z-index:20;
+  display:flex;align-items:center;gap:16px;padding:0 16px;
+  background:linear-gradient(180deg,rgba(4,6,12,0.85),rgba(4,6,12,0));
+  border-bottom:1px solid rgba(122,152,204,0.08);
+  transition:opacity .4s,transform .4s;
+}
+.tb-brand{display:flex;align-items:center;gap:11px}
+.tb-logo{color:var(--accent);font-size:14px}
+.tb-name{font-size:13px;letter-spacing:0.42em;color:#e8eef8;font-weight:600}
+.tb-sub{font-size:8px;letter-spacing:0.30em;color:var(--dim);margin-top:2px}
+.tb-stats{display:flex;gap:18px;margin-left:20px}
+.tb-stats .stat{display:flex;gap:7px;align-items:baseline;font-size:10px;white-space:nowrap}
+.tb-stats .stat span{color:var(--faint);letter-spacing:0.18em;font-size:8.5px}
+.tb-stats .stat b{color:var(--text);font-weight:500;letter-spacing:0.06em}
+.tb-right{margin-left:auto;display:flex;gap:8px}
+
+.panel{
+  position:absolute;background:var(--panel);border:1px solid var(--line);
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  box-shadow:0 10px 40px rgba(0,0,0,0.45);z-index:15;
+  transition:opacity .4s,transform .4s,width .3s;
+  display:flex;flex-direction:column;
+}
+#leftPanel{left:14px;top:58px;bottom:52px;width:236px}
+#leftPanel.collapsed{width:40px}
+#leftPanel.collapsed .lp-scroll{display:none}
+#leftPanel.collapsed .lp-head .sec-h{display:none}
+#leftPanel.collapsed .lp-head{justify-content:center;border-bottom:none}
+#rightPanel{right:14px;top:58px;bottom:232px;width:268px}
+body.in-system #rightPanel{bottom:46px}
+.lp-head{display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--line)}
+.lp-scroll{overflow-y:auto;flex:1;padding:12px 12px 20px}
+.lp-scroll section{margin-bottom:22px}
+.sec-h{font-size:8.5px;letter-spacing:0.30em;color:var(--dim);border-bottom:1px solid var(--line);padding-bottom:7px;margin-bottom:10px}
+.lp-head .sec-h{border-bottom:none;padding:0;margin:0}
+input[type="text"]{
+  width:100%;background:rgba(6,10,18,0.7);border:1px solid var(--line);color:var(--text);
+  padding:7px 9px;font-size:10.5px;letter-spacing:0.08em;font-family:var(--mono);
+  -webkit-user-select:text;user-select:text;
+}
+input[type="text"]:focus{border-color:var(--line2);outline:none}
+input[type="text"]::placeholder{color:var(--faint);letter-spacing:0.14em}
+.seed-row{display:flex;gap:6px;margin-bottom:8px}
+#search-results .res{
+  display:flex;align-items:center;gap:8px;padding:5px 8px;cursor:pointer;
+  border:1px solid transparent;margin-top:4px;
+}
+#search-results .res:hover{background:rgba(111,159,212,0.10);border-color:var(--line)}
+@keyframes resIn{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
+#search-results .res{animation:resIn .25s ease both}
+.res .rname{color:var(--text);font-size:10.5px;letter-spacing:0.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.res .rmeta{margin-left:auto;color:var(--faint);font-size:8.5px;letter-spacing:0.08em;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;flex:none}
+.empty{color:var(--faint);font-size:9.5px;letter-spacing:0.14em;padding:8px 4px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.chip{
+  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);
+  background:rgba(14,20,34,0.5);padding:4px 8px;font-size:9.5px;letter-spacing:0.12em;
+  color:#b9c6db;cursor:pointer;transition:opacity .15s,background .15s,border-color .15s;
+}
+.chip.on{background:rgba(30,42,66,0.6);color:#e8eef8;border-color:var(--line2)}
+.chip:not(.on){opacity:0.4}
+.chk{display:flex;align-items:center;gap:8px;font-size:9.5px;letter-spacing:0.14em;color:var(--dim);padding:4px 0;cursor:pointer}
+.chk input{accent-color:var(--accent);width:12px;height:12px}
+.scroll-list{max-height:150px;overflow-y:auto}
+.bm{display:flex;align-items:center;gap:7px;padding:5px 6px;cursor:pointer;border:1px solid transparent}
+.bm:hover{background:rgba(111,159,212,0.08);border-color:var(--line)}
+.bm .bm-name{font-size:10px;letter-spacing:0.06em;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bm .bm-seed{margin-left:auto;font-size:8px;color:var(--faint);letter-spacing:0.1em}
+.bm-x{color:var(--faint);cursor:pointer;font-size:12px;padding:1px 5px;transition:color .15s}
+.bm-x:hover{color:var(--warn)}
+.bm.other .bm-name{color:var(--dim)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}
+.stat-grid>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.stat-grid span{font-size:8px;letter-spacing:0.2em;color:var(--faint);white-space:nowrap}
+.stat-grid b{font-size:11.5px;color:var(--text);font-weight:500}
+
+.rp-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:8.5px;letter-spacing:0.3em;color:var(--dim)}
+#rp-body{overflow-y:auto;padding:12px;flex:1}
+@keyframes cardIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.insp-card{animation:cardIn .3s ease both}
+.insp-name{font-size:15px;color:#eef3fb;letter-spacing:0.10em;margin-bottom:4px;font-weight:600;word-break:break-word}
+.insp-sub{font-size:9px;color:var(--dim);letter-spacing:0.12em;margin-bottom:10px}
+.badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.badge{border:1px solid var(--line2);color:#b9c6db;font-size:8.5px;letter-spacing:0.18em;padding:3px 7px;white-space:nowrap}
+.badge.good{border-color:rgba(121,201,154,0.5);color:var(--good)}
+.badge.warn{border-color:rgba(224,138,90,0.5);color:var(--warn)}
+.kv{display:flex;flex-direction:column;margin-bottom:12px}
+.kv-r{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:5px 0;border-bottom:1px solid rgba(122,152,204,0.07)}
+.kv-r span{font-size:8.5px;letter-spacing:0.2em;color:var(--faint);flex:none}
+.kv-r b{font-size:10.5px;color:var(--text);font-weight:500;letter-spacing:0.05em;text-align:right;word-break:break-word}
+.meter{height:3px;background:rgba(122,152,204,0.12);margin:2px 0 6px}
+.meter-f{height:100%;background:linear-gradient(90deg,var(--accent2),var(--good));transition:width .4s ease}
+.meter-lab{font-size:8.5px;letter-spacing:0.18em;color:var(--dim);margin-bottom:14px}
+.insp-btns{display:flex;gap:8px;flex-wrap:wrap}
+.hint{color:var(--faint);font-size:9px;letter-spacing:0.12em;line-height:1.8}
+
+#bottombar{
+  position:absolute;left:0;right:0;bottom:0;height:34px;z-index:20;
+  display:flex;align-items:center;gap:22px;padding:0 16px;
+  background:linear-gradient(0deg,rgba(4,6,12,0.8),rgba(4,6,12,0));
+  font-size:9.5px;letter-spacing:0.12em;color:var(--dim);
+  transition:opacity .4s,transform .4s;
+}
+.bb-cell{display:flex;align-items:center;gap:6px;white-space:nowrap}
+#bb-coord{min-width:170px;color:#8fa2c0;font-variant-numeric:tabular-nums}
+#bb-status{color:var(--accent2);letter-spacing:0.2em}
+#bb-hint{flex:1;text-align:center;color:var(--faint);font-size:8.5px;letter-spacing:0.22em}
+#rot-slider{width:86px;accent-color:var(--accent)}
+#bb-zoom,#bb-fps{color:var(--text)}
+
+#minimap{
+  position:absolute;right:14px;bottom:46px;z-index:16;
+  border:1px solid var(--line);background:rgba(6,9,16,0.72);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:opacity .4s,visibility .4s;
+}
+#minimap .mm-tag{position:absolute;top:4px;left:7px;font-size:8px;letter-spacing:0.3em;color:var(--faint);pointer-events:none;z-index:2}
+#cv-mm{width:176px;height:176px;cursor:crosshair}
+#minimap.mm-off{opacity:0;visibility:hidden;pointer-events:none}
+body.in-system #leftPanel,body.in-system #minimap{opacity:0;visibility:hidden;pointer-events:none}
+body.cine .hud-hide{opacity:0!important;visibility:hidden;pointer-events:none!important}
+
+#log{position:absolute;left:50%;transform:translateX(-50%);bottom:42px;width:440px;max-width:70vw;z-index:14;pointer-events:none;display:flex;flex-direction:column-reverse;gap:3px}
+.lg{font-size:9.5px;letter-spacing:0.1em;color:var(--dim);animation:lgfade 9.5s forwards;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg .t{color:var(--faint);margin-right:8px;font-variant-numeric:tabular-nums}
+.lg.accent{color:var(--accent)}
+.lg.warn{color:var(--warn)}
+.lg.dim{color:var(--faint)}
+@keyframes lgfade{0%,62%{opacity:1}100%{opacity:0}}
+
+#scan{position:absolute;inset:0;z-index:25;pointer-events:none;opacity:0;transition:opacity .3s;overflow:hidden}
+#scan.show{opacity:1}
+#scan::after{content:"";position:absolute;inset:0;background:rgba(3,5,10,0.35)}
+#scan-line{position:absolute;left:0;right:0;height:2px;top:0;z-index:2;
+  background:linear-gradient(90deg,transparent,rgba(111,159,212,0.7),transparent);
+  box-shadow:0 0 18px rgba(111,159,212,0.5)}
+#scan.show #scan-line{animation:scanmove 0.9s linear infinite}
+@keyframes scanmove{0%{top:0}100%{top:100%}}
+#scan-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;
+  font-size:10px;letter-spacing:0.5em;color:var(--accent2);animation:scanpulse 1s ease-in-out infinite}
+@keyframes scanpulse{0%,100%{opacity:0.4}50%{opacity:1}}
+
+#cine-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:30;
+  font-size:10px;letter-spacing:0.4em;color:var(--dim);pointer-events:none;animation:scanpulse 2.6s ease-in-out infinite}
+
+#sys-hud{position:absolute;left:14px;top:58px;z-index:22;display:flex;flex-direction:column;gap:10px;max-width:320px}
+#sys-hud .sys-title{font-size:13px;letter-spacing:0.2em;color:#eef3fb}
+#sys-hud .sys-sub{font-size:9px;letter-spacing:0.18em;color:var(--dim)}
+.sys-time{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:9px;letter-spacing:0.2em}
+.tbtn.active{border-color:rgba(226,166,85,0.5);color:var(--accent)}
+
+#tooltip{position:fixed;z-index:40;pointer-events:none;background:rgba(8,12,20,0.94);border:1px solid var(--line2);padding:7px 10px;max-width:230px}
+#tooltip .tt-name{font-size:10.5px;letter-spacing:0.1em;color:#e8eef8}
+#tooltip .tt-meta{font-size:8.5px;letter-spacing:0.14em;color:var(--dim);margin-top:3px}
+
+#pal-wrap{position:fixed;inset:0;z-index:60;background:rgba(2,4,9,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  display:flex;justify-content:center;align-items:flex-start;padding-top:15vh}
+#pal{width:min(540px,92vw);background:rgba(10,15,26,0.96);border:1px solid var(--line2);box-shadow:0 24px 80px rgba(0,0,0,0.6)}
+#pal-input{width:100%;border:none;border-bottom:1px solid var(--line);background:transparent;color:#e8eef8;
+  padding:15px 16px;font-size:13px;letter-spacing:0.1em;font-family:var(--mono);-webkit-user-select:text;user-select:text}
+#pal-input:focus{outline:none}
+#pal-list{max-height:320px;overflow-y:auto;padding:6px}
+.pal-item{display:flex;align-items:center;gap:12px;padding:9px 12px;cursor:pointer;color:#a8b8d0;
+  border:1px solid transparent;font-size:11px;letter-spacing:0.1em}
+.pal-item .pi-k{margin-left:auto;font-size:8.5px;color:var(--faint);letter-spacing:0.16em;white-space:nowrap}
+.pal-item.active{background:rgba(226,166,85,0.07);border-color:rgba(226,166,85,0.3);color:#f0f4fb}
+
+@media (max-width:1180px){
+  .tb-stats .stat:nth-child(4){display:none}
+  #leftPanel{width:210px}
+  #rightPanel{width:240px}
+}
+@media (max-width:980px){
+  #bb-hint{display:none}
+  .tb-sub{display:none}
+}
+@media (max-width:900px){
+  #cv-mm{width:140px;height:140px}
+  #log{display:none}
+}
+@media (max-width:860px){
+  #minimap{display:none}
+  .tb-stats{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <canvas id="cv-bg" aria-hidden="true"></canvas>
+  <canvas id="cv-main" role="img" aria-label="Procedural galaxy. Drag to pan, scroll to zoom, click a star to select it."></canvas>
+  <canvas id="cv-sys" hidden aria-label="Planetary system view"></canvas>
+
+  <header id="topbar" class="hud-hide">
+    <div class="tb-brand">
+      <button id="btn-panel" class="btn icon" aria-label="Toggle console panel" title="Toggle console">▤</button>
+      <span class="tb-logo" aria-hidden="true">◈</span>
+      <div>
+        <div class="tb-name">ASTRA</div>
+        <div class="tb-sub">PROCEDURAL GALAXY EXPLORER</div>
+      </div>
+    </div>
+    <div class="tb-stats" role="group" aria-label="Galaxy status">
+      <div class="stat"><span>SEED</span><b id="tb-seed">—</b></div>
+      <div class="stat"><span>STARS</span><b id="tb-stars">—</b></div>
+      <div class="stat"><span>ZOOM</span><b id="tb-zoom">—</b></div>
+      <div class="stat"><span>TARGET</span><b id="tb-target">—</b></div>
+    </div>
+    <div class="tb-right">
+      <button id="btn-new" class="btn" title="Synthesize a new galaxy (R)">⟳ NEW GALAXY</button>
+      <button id="btn-tour" class="btn" aria-pressed="false" title="Auto tour of notable systems (T)">TOUR</button>
+      <button id="btn-cine" class="btn" aria-pressed="false" title="Cinematic mode — hide HUD (C)">CINE</button>
+      <button id="btn-sound" class="btn" aria-pressed="false" title="Synthesized sound (off by default)">SND</button>
+    </div>
+  </header>
+
+  <aside id="leftPanel" class="panel hud-hide" aria-label="Console">
+    <div class="lp-head">
+      <span class="sec-h">CONSOLE</span>
+      <button id="lp-collapse" class="btn icon" aria-label="Collapse panel">–</button>
+    </div>
+    <div class="lp-scroll">
+      <section>
+        <div class="sec-h">SEARCH</div>
+        <input id="search-input" type="text" placeholder="NAME OR ID…" aria-label="Search stars by name or ID" autocomplete="off" spellcheck="false">
+        <div id="search-results" role="listbox" aria-label="Search results"></div>
+        <button id="btn-random" class="btn primary wide" style="margin-top:8px" title="Fly to a random noteworthy system">⚡ DISCOVER RANDOM SYSTEM</button>
+      </section>
+      <section>
+        <div class="sec-h">VOLUME SYNTHESIS</div>
+        <div class="seed-row">
+          <input id="seed-input" type="text" placeholder="SEED" aria-label="Galaxy seed" maxlength="40" autocomplete="off" spellcheck="false">
+          <button id="btn-seed-rand" class="btn icon" aria-label="Random seed" title="Random seed">⟳</button>
+        </div>
+        <button id="btn-generate" class="btn primary wide">GENERATE GALAXY</button>
+      </section>
+      <section>
+        <div class="sec-h">SPECTRAL FILTERS</div>
+        <div id="chips" class="chips" role="group" aria-label="Spectral class filters"></div>
+        <label class="chk"><input type="checkbox" id="f-hab"> HABITABLE CANDIDATES ONLY</label>
+        <label class="chk"><input type="checkbox" id="f-multi"> MULTI-STAR SYSTEMS ONLY</label>
+        <label class="chk"><input type="checkbox" id="f-planets"> SYSTEMS WITH PLANETS</label>
+      </section>
+      <section>
+        <div class="sec-h">BOOKMARKS <span class="dim" id="bm-count"></span></div>
+        <div id="bm-list" class="scroll-list" aria-label="Bookmarked stars"></div>
+      </section>
+      <section>
+        <div class="sec-h">GALAXY STATISTICS</div>
+        <div class="stat-grid">
+          <div><span>TOTAL STARS</span><b id="st-total">—</b></div>
+          <div><span>VISIBLE</span><b id="st-visible">—</b></div>
+          <div><span>BINARY SYSTEMS</span><b id="st-multi">—</b></div>
+          <div><span>PLANETARY SYSTEMS</span><b id="st-psys">—</b></div>
+          <div><span>PLANETS</span><b id="st-planet">—</b></div>
+          <div><span>HABITABLE CANDIDATES</span><b id="st-hab">—</b></div>
+          <div><span>RARE O-STARS</span><b id="st-o">—</b></div>
+        </div>
+      </section>
+    </div>
+  </aside>
+
+  <aside id="rightPanel" class="panel hud-hide" aria-label="Inspector">
+    <div class="rp-head"><span>INSPECTOR</span><span class="dim" id="rp-mode">GALAXY</span></div>
+    <div id="rp-body"></div>
+  </aside>
+
+  <footer id="bottombar" class="hud-hide">
+    <div class="bb-cell" id="bb-coord" aria-label="Galactic coordinates under cursor">X +0000 · Y +0000</div>
+    <div class="bb-cell" id="bb-status">STANDBY</div>
+    <div class="bb-cell" id="bb-hint">WASD PAN · WHEEL ZOOM · 0 RESET · F FOCUS · ⌘K COMMANDS · ESC BACK</div>
+    <div class="bb-cell"><span class="dim">ROT</span><input id="rot-slider" type="range" min="0" max="359" value="0" aria-label="Galaxy orientation"> <span id="rot-val">000°</span></div>
+    <div class="bb-cell"><span class="dim">ZOOM</span><b id="bb-zoom">100%</b></div>
+    <div class="bb-cell"><span class="dim">FPS</span><b id="bb-fps">—</b></div>
+  </footer>
+
+  <div id="minimap" class="hud-hide"><span class="mm-tag">MAP</span><canvas id="cv-mm" aria-label="Galaxy minimap. Click to move the camera."></canvas></div>
+
+  <div id="log" aria-live="polite"></div>
+
+  <div id="scan" aria-hidden="true"><div id="scan-line"></div><div id="scan-text">SCANNING GALAXIC VOLUME</div></div>
+  <div id="cine-hint" class="hidden">CINEMATIC — PRESS ESC TO RESTORE HUD</div>
+
+  <div id="sys-hud" class="hidden">
+    <button id="btn-sys-back" class="btn primary">◀ RETURN TO GALAXY</button>
+    <div class="sys-title" id="sys-name">—</div>
+    <div class="sys-sub" id="sys-sub">—</div>
+    <div class="sys-time"><span class="dim">TIME</span>
+      <button class="btn sm tbtn active" data-ts="1" aria-label="Time 1x">1×</button>
+      <button class="btn sm tbtn" data-ts="8" aria-label="Time 8x">8×</button>
+      <button class="btn sm tbtn" data-ts="32" aria-label="Time 32x">32×</button>
+      <button class="btn sm tbtn" data-ts="0" aria-label="Pause time">⏸</button>
+    </div>
+  </div>
+
+  <div id="tooltip" class="hidden"></div>
+
+  <div id="pal-wrap" class="hidden" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div id="pal">
+      <input id="pal-input" type="text" placeholder="TYPE A COMMAND OR STAR NAME…" aria-label="Command" autocomplete="off" spellcheck="false">
+      <div id="pal-list" role="listbox"></div>
+      <div class="pal-foot"><span>↑↓ NAVIGATE</span><span>↵ RUN</span><span>ESC CLOSE</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+/* ================= 01 · UTILS ================= */
+const TAU = Math.PI * 2;
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : (v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pick1 = a => a[Math.floor(Math.random() * a.length)];
+function hashStr(s){ let h = 1779033703 ^ s.length; for (let i = 0; i < s.length; i++){ h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); } return h >>> 0; }
+function mulberry32(a){ return function(){ a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+class RNG {
+  constructor(key){ this.next = mulberry32(hashStr(key)); }
+  range(a, b){ return a + (b - a) * this.next(); }
+  int(a, b){ return a + Math.floor(this.next() * (b - a + 1)); }
+  pick(a){ return a[Math.floor(this.next() * a.length)]; }
+  gauss(){ let u = 0, v = 0; while (u === 0) u = this.next(); while (v === 0) v = this.next(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); }
+}
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const fmtInt = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const sgn = (v, w = 4) => (v < 0 ? '−' : '+') + String(Math.abs(Math.round(v))).padStart(w, '0');
+const ageStr = g => g >= 1 ? g.toFixed(1) + ' BY' : Math.max(1, Math.round(g * 1000)) + ' MY';
+const safeGet = k => { try { return localStorage.getItem(k); } catch (e){ return null; } };
+const safeSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e){} };
+const REDUCED = (() => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e){ return false; } })();
+const MONO = '"SF Mono", Consolas, monospace';
+
+/* ================= 02 · PROCEDURAL DATA ================= */
+const CLASSES = [
+  { k:'O', col:'#8fb7ff', t:[32000, 96000], m:[16, 88],   r:[5.0, 17],   age:[0.004, 0.12], w:0.004 },
+  { k:'B', col:'#aabfff', t:[10400, 31800], m:[2.1, 15],  r:[2.1, 8.0],  age:[0.01, 1.4],  w:0.034 },
+  { k:'A', col:'#cfd9ff', t:[7300, 10400],  m:[1.4, 2.2], r:[1.05, 1.9], age:[0.05, 4.2],  w:0.082 },
+  { k:'F', col:'#f6f3ec', t:[6000, 7300],   m:[1.04, 1.42],r:[0.85, 1.4],age:[0.25, 7],    w:0.15 },
+  { k:'G', col:'#ffe0a4', t:[5150, 6000],   m:[0.72, 1.06],r:[0.68, 1.18],age:[0.4, 11],   w:0.27 },
+  { k:'K', col:'#ffc185', t:[3700, 5150],   m:[0.44, 0.72],r:[0.5, 0.92],age:[0.6, 12.5],  w:0.23 },
+  { k:'M', col:'#ff9d73', t:[2400, 3700],   m:[0.09, 0.42],r:[0.12, 0.62],age:[1, 13],     w:0.23 }
+];
+const NP1 = ['KEPLER','HD','RX','KX','GJ','LTT','TUC','WDS'];
+const NP2 = ['VELORUM','CYGNI','LYRA','ARGUS','CASSIO','DRACO','LYNX','VULPES','SOLARIS','TALARA','NYX','ORPHEUS','ALTARA','VESPER','CIRRUS','AURIGA','CORVUS','PHOENIX','KESTREL','LUMEN','NOCTIS','SERENA','BASTION','HALCYON'];
+const NP3 = ['ALPHA','BETA','GAMMA','DELTA','EPSILON','ZETA','ETA','THETA','IOTA','KAPPA','LAMBDA','MU','SIGMA','TAU','OMEGA','NU'];
+const NP4 = ['TAIRA','ARGA','SOLACE','MIRIEL','OSIRIS','VALDIS','ORRIN','SABLE','ECHO','PRAXIS'];
+const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+const SUFF = ['',' PRIME',' MINOR',' MAJOR',' SECUNDUS',' BOREAL',' LUMINUS',' NOCTIS'];
+const NEB_NAMES = ['LYRA VEIL','EMBER CIRCLET','THE HOLLOW','SABLE RIFT','VESPER REACH','AUREOLE','SPORE FIELD','GLACIAL RIM','CINNABAR LACE','NIGHTMARE FOLD'];
+const PTYPE = {
+  rocky:{n:'ROCKY', c:'#8a7d6e'}, ocean:{n:'OCEAN', c:'#3f7fae'}, desert:{n:'DESERT', c:'#c2955c'},
+  lava:{n:'LAVA', c:'#d9603b'}, ice:{n:'ICE', c:'#a9c9dd'}, gas:{n:'GAS GIANT', c:'#c9a17e'},
+  iceg:{n:'ICE GIANT', c:'#6fa8b8'}, super:{n:'SUPER-EARTH', c:'#5f8f6f'}
+};
+const AMBIENT = [
+  g => 'PHOTON RING STABLE — ' + g.core.name,
+  g => 'DUST DENSITY NOMINAL IN ' + pick1(g.nebulae).name,
+  () => 'STARFALL CALIBRATION NOMINAL',
+  g => 'RELAY PING ' + pick1(g.stars).name + ' — ' + (120 + (Math.random() * 400 | 0)) + ' MS',
+  g => 'TIDAL GRADIENT STEADY NEAR ' + pick1(g.stars).name,
+  () => 'VACUUM FLUX WITHIN TOLERANCE'
+];
+
+/* ================= 03 · STATE & DOM ================= */
+const ZMIN = 0.06, ZMAX = 12;
+const S = {
+  seed:'ASTRA-74291', gal:null,
+  cam:{x:0,y:0,z:0.2,tx:0,ty:0,tz:0.4}, rot:{cur:0,target:0}, fit:0.4,
+  view:'galaxy', sel:null, hover:null, sys:null, timeScale:1, simT:0,
+  filters:{O:1,B:1,A:1,F:1,G:1,K:1,M:1,hab:0,multi:0,planet:0},
+  showLabels:true, showMinimap:true, cine:false, tour:false, sound:false,
+  transit:null, status:'STANDBY', generating:false, pendingInspect:null,
+  searchFlash:[], scanT:null, crossfade:null, bookmarks:[],
+  quality:REDUCED ? 1 : 2, intro:0, t0:performance.now(),
+  lastAct:0, lastTour:0, lastAmbient:0, ambJit:0, keys:new Set(),
+  mouse:{x:0,y:0}, lastZoomPct:-1, lastCoord:''
+};
+const D = {
+  bg:$('cv-bg'), main:$('cv-main'), sys:$('cv-sys'), mm:$('cv-mm'),
+  bctx:null, ctx:null, sctx:null, mctx:null,
+  tbSeed:$('tb-seed'), tbStars:$('tb-stars'), tbZoom:$('tb-zoom'), tbTarget:$('tb-target'),
+  btnPanel:$('btn-panel'), btnNew:$('btn-new'), btnTour:$('btn-tour'), btnCine:$('btn-cine'), btnSound:$('btn-sound'),
+  lp:$('leftPanel'), lpCollapse:$('lp-collapse'),
+  searchInput:$('search-input'), searchResults:$('search-results'), btnRandom:$('btn-random'),
+  seedInput:$('seed-input'), btnSeedRand:$('btn-seed-rand'), btnGenerate:$('btn-generate'),
+  chips:$('chips'), fHab:$('f-hab'), fMulti:$('f-multi'), fPlanets:$('f-planets'),
+  bmList:$('bm-list'), bmCount:$('bm-count'),
+  stTotal:$('st-total'), stVisible:$('st-visible'), stMulti:$('st-multi'), stPsys:$('st-psys'),
+  stPlanet:$('st-planet'), stHab:$('st-hab'), stO:$('st-o'),
+  rpMode:$('rp-mode'), rpBody:$('rp-body'),
+  bbCoord:$('bb-coord'), bbStatus:$('bb-status'), rotSlider:$('rot-slider'), rotVal:$('rot-val'),
+  bbZoom:$('bb-zoom'), bbFps:$('bb-fps'),
+  minimap:$('minimap'), log:$('log'), scan:$('scan'), cineHint:$('cine-hint'),
+  sysHud:$('sys-hud'), sysName:$('sys-name'), sysSub:$('sys-sub'), btnSysBack:$('btn-sys-back'),
+  tooltip:$('tooltip'),
+  palWrap:$('pal-wrap'), palInput:$('pal-input'), palList:$('pal-list')
+};
+
+/* ================= 04 · CANVAS / BACKDROP / SPRITES ================= */
+let W = 0, H = 0, DPR = 1;
+function sizeAll(){
+  W = window.innerWidth; H = window.innerHeight;
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  for (const c of [D.bg, D.main, D.sys]){ c.width = Math.max(2, Math.round(W * DPR)); c.height = Math.max(2, Math.round(H * DPR)); }
+  D.bctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  D.ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  D.sctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const ms = W < 900 ? 140 : 176;
+  D.mm.width = ms * 2; D.mm.height = ms * 2;
+  D.mctx.setTransform(2, 0, 0, 2, 0, 0);
+  S.fit = Math.min(W, H) / 2200 * 0.95;
+  if (S.sys) S.sys.K = (Math.min(W, H) / 2 - 36) / S.sys.data.maxRv;
+  buildBackground();
+  if (S.gal){ buildGalaxyLayer(S.gal); thumbDirty = true; }
+}
+function buildBackground(){
+  const x = D.bctx;
+  x.fillStyle = '#030509'; x.fillRect(0, 0, W, H);
+  const rng = new RNG('BG|' + S.seed);
+  const hues = ['22,34,64','16,36,40','34,22,44','18,26,48'];
+  for (let i = 0; i < 4; i++){
+    const px = rng.range(0, W), py = rng.range(0, H), r = rng.range(180, 480);
+    const gr = x.createRadialGradient(px, py, 0, px, py, r);
+    gr.addColorStop(0, 'rgba(' + hues[i] + ',0.32)'); gr.addColorStop(1, 'rgba(' + hues[i] + ',0)');
+    x.fillStyle = gr; x.fillRect(0, 0, W, H);
+  }
+  const n = Math.round(W * H / 2400);
+  for (let i = 0; i < n; i++){
+    const b = rng.next();
+    const sz = b > 0.985 ? 1.8 : (b > 0.9 ? 1.2 : 0.8);
+    x.fillStyle = 'rgba(' + rng.pick(['190,200,225','210,205,230','170,190,220','225,215,200']) + ',' + (0.12 + b * 0.5).toFixed(2) + ')';
+    x.fillRect(rng.next() * W, rng.next() * H, sz, sz);
+  }
+  for (let i = 0; i < 4; i++){
+    const px = rng.range(W * 0.05, W * 0.95), py = rng.range(H * 0.08, H * 0.92);
+    const rx = rng.range(6, 16), ry = rx * rng.range(0.3, 0.55);
+    x.save(); x.translate(px, py); x.rotate(rng.range(0, TAU));
+    const gr = x.createRadialGradient(0, 0, 0, 0, 0, rx);
+    gr.addColorStop(0, 'rgba(170,180,210,0.26)'); gr.addColorStop(1, 'rgba(170,180,210,0)');
+    x.fillStyle = gr; x.beginPath(); x.ellipse(0, 0, rx, ry, 0, 0, TAU); x.fill(); x.restore();
+  }
+  const gc = document.createElement('canvas'); gc.width = gc.height = 128;
+  const gx = gc.getContext('2d');
+  const im = gx.createImageData(128, 128);
+  for (let i = 0; i < im.data.length; i += 4){ const v = rng.int(0, 255); im.data[i] = v; im.data[i+1] = v; im.data[i+2] = v; im.data[i+3] = 9; }
+  gx.putImageData(im, 0, 0);
+  x.save(); x.globalAlpha = 0.5; x.globalCompositeOperation = 'overlay';
+  for (let yy = 0; yy < H; yy += 128) for (let xx = 0; xx < W; xx += 128) x.drawImage(gc, xx, yy);
+  x.restore();
+  const vg = x.createRadialGradient(W/2, H/2, Math.min(W, H) * 0.35, W/2, H/2, Math.max(W, H) * 0.75);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(1,2,6,0.6)');
+  x.fillStyle = vg; x.fillRect(0, 0, W, H);
+}
+function hexRGB(h){ const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function makeSprite(col){
+  const c = document.createElement('canvas'); c.width = c.height = 96;
+  const x = c.getContext('2d');
+  const r = hexRGB(col);
+  const gr = x.createRadialGradient(48, 48, 0, 48, 48, 48);
+  gr.addColorStop(0, 'rgba(255,255,255,0.95)');
+  gr.addColorStop(0.16, 'rgba(' + r[0] + ',' + r[1] + ',' + r[2] + ',0.85)');
+  gr.addColorStop(0.42, 'rgba(' + r[0] + ',' + r[1] + ',' + r[2] + ',0.16)');
+  gr.addColorStop(1, 'rgba(' + r[0] + ',' + r[1] + ',' + r[2] + ',0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 96, 96);
+  return c;
+}
+const SPR = { cls:[], core:null, coreHot:null, anom:null };
+function buildSprites(){
+  SPR.cls = CLASSES.map(c => makeSprite(c.col));
+  SPR.core = makeSprite('#ffcf8a');
+  SPR.coreHot = makeSprite('#fff3d6');
+  SPR.anom = makeSprite('#b98cff');
+}
+
+/* ================= 05 · GALAXY GENERATION ================= */
+function normalizeSeed(s){
+  let t = String(s || '').trim().toUpperCase().replace(/\s+/g, ' ').replace(/[^\w\s\-./]/g, '').slice(0, 40);
+  return t || randomSeedString();
+}
+function randomSeedString(){
+  const words = ['ASTRA','VOID','LYRA','VEGA','NYX','ORION','CIRRUS','TALARA','SABLE','ECHO','DELTA','NOVA','HELIOS','VESPER','KOR','AXIOM'];
+  return pick1(words) + '-' + (10000 + (Math.random() * 89999 | 0));
+}
+function genName(rng, used){
+  const t = rng.next();
+  let base;
+  if (t < 0.22) base = rng.pick(NP1) + '-' + rng.int(100, 99999);
+  else if (t < 0.42) base = rng.pick(NP3) + ' ' + rng.pick(NP4);
+  else if (t < 0.62) base = rng.pick(NP3) + ' ' + rng.pick(NP2);
+  else if (t < 0.82) base = rng.pick(NP2) + ' ' + rng.pick(ROMAN);
+  else base = (rng.pick(NP2) + rng.pick(SUFF)).trim();
+  let name = base, k = 1;
+  while (used.has(name) && k < 12){ name = base + ' ' + ROMAN[k]; k++; }
+  used.add(name);
+  return name;
+}
+function isCatalog(st){ return /^(KEPLER|HD|RX|KX|GJ|LTT|TUC|WDS)-/.test(st.name); }
+function genPlanetName(rng){
+  const A = ['Va','Ke','Tho','Or','Ze','Lu','Am','Nyr','Ise','Cor','Dra','Pel','Aur','Sax','Vel','Qua','Mir','Tal'];
+  const B = ['on','ar','is','en','ia','oth','um','ex','a','yr','ane','or'];
+  let nm = rng.pick(A) + rng.pick(B);
+  nm = nm.charAt(0).toUpperCase() + nm.slice(1);
+  if (rng.next() < 0.3) nm += pick1([' Prime',' Minor',' Borealis',' Secundus']);
+  return nm;
+}
+function weightedIdx(ws, rng){
+  let s = 0; for (const w of ws) s += w;
+  let r = rng.next() * s;
+  for (let i = 0; i < ws.length; i++){ r -= ws[i]; if (r <= 0) return i; }
+  return ws.length - 1;
+}
+function generateGalaxy(seed){
+  const rng = new RNG('GAL|' + seed);
+  const arms = rng.int(3, 5);
+  const twist = rng.range(2.0, 3.1);
+  const rot = rng.range(0, TAU);
+  const R = 1000;
+  const N = clamp(Math.round(W * H / 820), 1500, 2900);
+  const armBase = a => a * TAU / arms;
+  const armAngle = a => armBase(a) + a * 0; // base only
+  // clumps along the arms
+  const clumps = [];
+  for (let a = 0; a < arms; a++) for (let k = 0; k < 7; k++){
+    const rr = Math.pow(rng.next(), 0.75) * R;
+    const ang = armBase(a) + (rr / R) * twist * 2.4 + rng.gauss() * 0.08;
+    clumps.push({ x: Math.cos(ang) * rr, y: Math.sin(ang) * rr, s: rng.range(28, 95) });
+  }
+  // voids
+  const voids = [];
+  for (let i = 0; i < rng.int(3, 5); i++){
+    const rr = rng.range(150, 900), ang = rng.next() * TAU;
+    voids.push({ x: Math.cos(ang) * rr, y: Math.sin(ang) * rr, r: rng.range(55, 150) });
+  }
+  const inVoid = (x, y) => { for (const v of voids){ const dx = x - v.x, dy = y - v.y; if (dx*dx + dy*dy < v.r * v.r) return true; } return false; };
+  const used = new Set();
+  const stars = [];
+  const ws = CLASSES.map(c => c.w);
+  for (let i = 0; i < N; i++){
+    let x = 0, y = 0, r = 0, ok = false, tries = 0;
+    const u = rng.next();
+    while (!ok && tries < 5){
+      tries++;
+      if (u < 0.24){
+        r = Math.pow(rng.next(), 2.1) * R * 0.26;
+        const ang = rng.next() * TAU;
+        x = Math.cos(ang) * r + rng.gauss() * 10; y = Math.sin(ang) * r + rng.gauss() * 10;
+      } else if (u < 0.74){
+        const a = rng.int(0, arms - 1);
+        let rr = Math.pow(rng.next(), 0.7) * R;
+        let ang = armBase(a) + (rr / R) * twist * 2.4;
+        if (rng.next() < 0.22){
+          const c = clumps[rng.int(0, clumps.length - 1)];
+          x = c.x + rng.gauss() * c.s * 0.6; y = c.y + rng.gauss() * c.s * 0.6; r = Math.hypot(x, y);
+        } else {
+          ang += rng.gauss() * (0.10 + 0.12 * (rr / R));
+          x = Math.cos(ang) * rr; y = Math.sin(ang) * rr; r = rr;
+        }
+      } else {
+        r = Math.sqrt(rng.next()) * R;
+        const ang = rng.next() * TAU;
+        x = Math.cos(ang) * r; y = Math.sin(ang) * r;
+      }
+      ok = !inVoid(x, y);
+    }
+    if (!ok) continue;
+    r = Math.min(r, R * 1.04);
+    let weights = ws;
+    if (r < 240) weights = ws.map((w, idx) => (idx === 0 || idx === 1) ? w * 7 : (idx === 2 ? w * 2 : w * 0.6));
+    const ci = weightedIdx(weights, rng);
+    const c = CLASSES[ci];
+    const temp = c.t[0] + (c.t[1] - c.t[0]) * Math.pow(rng.next(), 0.8);
+    const digit = rng.int(0, 9);
+    const lum = ci <= 1 ? (rng.next() < 0.6 ? 'Ia' : 'Iab') : (rng.next() < 0.72 ? 'V' : (rng.next() < 0.6 ? 'IV' : 'III'));
+    const mass = c.m[0] + (c.m[1] - c.m[0]) * rng.next();
+    const radius = c.r[0] + (c.r[1] - c.r[0]) * rng.next();
+    const age = Math.min(13, c.age[0] + (c.age[1] - c.age[0]) * Math.pow(rng.next(), 1.4));
+    const L = Math.pow(mass, 3.5);
+    const b = clamp(0.16 + 0.62 * Math.pow(L, 0.35) * (0.75 + 0.5 * rng.next()) * (1 - 0.22 * (r / 1000) * (r / 1000)), 0.1, 1);
+    const nStars = rng.next() < 0.70 ? 1 : (rng.next() < 0.8 ? 2 : 3);
+    let planets = 0;
+    if (rng.next() < 0.62){
+      const u2 = rng.next();
+      planets = u2 < 0.22 ? 1 : u2 < 0.40 ? 2 : u2 < 0.55 ? 3 : u2 < 0.68 ? 4 : u2 < 0.78 ? 5 : u2 < 0.86 ? 6 : u2 < 0.92 ? 7 : u2 < 0.96 ? 8 : u2 < 0.985 ? 9 : 10;
+    }
+    let hab = 0;
+    if (planets > 0 && rng.next() < 0.14) hab = rng.next() < 0.7 ? 1 : 2;
+    const hEst = hab > 0 ? clamp(0.4 + hab * 0.25 + rng.next() * 0.1, 0, 0.95) : (planets > 0 ? 0.08 + rng.next() * 0.1 : 0.02);
+    const notable = (ci === 0 ? 6 : ci === 1 ? 3 : ci === 2 ? 1.6 : 0) + (nStars > 1 ? 2 : 0) + planets * 0.32 + hab * 2.6 + (rng.next() < 0.03 ? 3 : 0);
+    const comp = [];
+    if (nStars >= 2){ const cc = rng.pick(CLASSES.slice(3)); comp.push({ k:cc.k, col:cc.col, d:rng.range(2.5, 7), s:rng.range(0.5, 0.85), dir:rng.next() < 0.5 ? 1 : -1 }); }
+    if (nStars >= 3){ const cc = rng.pick(CLASSES.slice(4)); comp.push({ k:cc.k, col:cc.col, d:rng.range(9, 18), s:rng.range(0.35, 0.6), dir:rng.next() < 0.5 ? 1 : -1 }); }
+    stars.push({
+      i, id:'A-' + String(i + 1).padStart(4, '0'), name:genName(rng, used),
+      x, y, r, cls:c.k, ci, temp, lum, spectral:c.k + digit + ' ' + lum,
+      mass, radius, age, L, b, stars:nStars, planets, hab, hEst, notable,
+      size: 0.7 + 2.5 * b + (b > 0.92 ? 1.1 : 0),
+      tw: rng.next() * TAU, twS: rng.range(0.4, 1.8), anom: 0, comp
+    });
+  }
+  const anomNames = [];
+  for (let k = 0; k < rng.int(1, 2); k++){
+    const st = stars[rng.int(0, stars.length - 1)];
+    if (st && !st.anom){ st.anom = 1; anomNames.push(st.name); }
+  }
+  const core = {
+    name:'ASTRA X-1', massM: rng.range(2.4, 7.8), spin: rng.range(0.55, 0.95),
+    state: rng.pick(['QUIESCENT','LOW-FLUX','PULSING']), ring: rng.range(0.7, 1.3)
+  };
+  const nebulae = [];
+  const usedN = new Set();
+  const hues = [{c:'#4fd8c8'},{c:'#c86fc8'},{c:'#e8a05c'},{c:'#8f7fd8'}];
+  for (let i = 0; i < rng.int(4, 6); i++){
+    const a = rng.int(0, arms - 1);
+    const rr = rng.range(300, 880);
+    const ang = armBase(a) + (rr / R) * twist * 2.4 + rng.gauss() * 0.35;
+    let nm = rng.pick(NEB_NAMES);
+    while (usedN.has(nm)) nm = rng.pick(NEB_NAMES);
+    usedN.add(nm);
+    const h = hues[rng.int(0, hues.length - 1)];
+    nebulae.push({ x: Math.cos(ang) * rr, y: Math.sin(ang) * rr, r: rng.range(80, 200), col: h.c, a: rng.range(0.05, 0.11), name: nm });
+  }
+  const stats = {
+    total: stars.length,
+    multi: stars.filter(s => s.stars === 2).length,
+    psys: stars.filter(s => s.planets > 0).length,
+    planets: stars.reduce((a, s) => a + s.planets, 0),
+    hab: stars.reduce((a, s) => a + s.hab, 0),
+    o: stars.filter(s => s.cls === 'O').length
+  };
+  const notableList = stars.slice().sort((a, b) => b.notable - a.notable);
+  return { seed, arms, twist, rot, R, stars, core, nebulae, stats, notableList, anomNames, sysCache: new Map(), thumb: null, layer: null };
+}
+
+/* cached galaxy-layer canvas (dust / nebulae / core halo / haze) */
+function buildGalaxyLayer(gal){
+  const L = 2048;
+  const c = document.createElement('canvas'); c.width = c.height = L;
+  const x = c.getContext('2d');
+  const rng = new RNG('LAYER|' + gal.seed);
+  const P = v => (v + 1100) / 2200 * L;
+  let g = x.createRadialGradient(L/2, L/2, 0, L/2, L/2, P(1000));
+  g.addColorStop(0, 'rgba(46,48,72,0.55)');
+  g.addColorStop(0.5, 'rgba(28,30,52,0.28)');
+  g.addColorStop(1, 'rgba(10,12,24,0)');
+  x.fillStyle = g; x.fillRect(0, 0, L, L);
+  x.globalCompositeOperation = 'lighter';
+  for (const n of gal.nebulae){
+    const rc = hexRGB(n.col);
+    const gr = x.createRadialGradient(P(n.x), P(n.y), 0, P(n.x), P(n.y), n.r / 2200 * L);
+    gr.addColorStop(0, 'rgba(' + rc[0] + ',' + rc[1] + ',' + rc[2] + ',' + n.a.toFixed(3) + ')');
+    gr.addColorStop(1, 'rgba(' + rc[0] + ',' + rc[1] + ',' + rc[2] + ',0)');
+    x.fillStyle = gr; x.beginPath(); x.arc(P(n.x), P(n.y), n.r / 2200 * L, 0, TAU); x.fill();
+  }
+  const cg = x.createRadialGradient(L/2, L/2, 0, L/2, L/2, 340 / 2200 * L);
+  cg.addColorStop(0, 'rgba(255,225,170,0.6)');
+  cg.addColorStop(0.25, 'rgba(255,170,95,0.22)');
+  cg.addColorStop(0.6, 'rgba(120,80,120,0.08)');
+  cg.addColorStop(1, 'rgba(0,0,0,0)');
+  x.fillStyle = cg; x.beginPath(); x.arc(L/2, L/2, 340 / 2200 * L, 0, TAU); x.fill();
+  x.globalCompositeOperation = 'source-over';
+  // dust lanes tracing each arm
+  for (let a = 0; a < gal.arms; a++){
+    for (let k = 0; k <= 30; k++){
+      const t = 0.04 + 0.96 * k / 30;
+      const rr = t * gal.R;
+      if (rr < 170) continue;
+      const ang = a * TAU / gal.arms + t * gal.twist * 2.4;
+      const off = (k % 2 ? 1 : -1) * (12 + rng.range(0, 30));
+      const px = Math.cos(ang) * rr + (-Math.sin(ang)) * off;
+      const py = Math.sin(ang) * rr + (Math.cos(ang)) * off;
+      const rad = (34 + rng.range(0, 50) + rr * 0.03) / 2200 * L;
+      x.save();
+      x.translate(P(px), P(py)); x.rotate(ang + Math.PI / 2); x.scale(1, 0.5);
+      const g3 = x.createRadialGradient(0, 0, 0, 0, 0, rad);
+      g3.addColorStop(0, 'rgba(4,3,10,' + (0.14 + rng.range(0, 0.1)).toFixed(3) + ')');
+      g3.addColorStop(1, 'rgba(4,3,10,0)');
+      x.fillStyle = g3; x.beginPath(); x.arc(0, 0, rad, 0, TAU); x.fill();
+      x.restore();
+    }
+  }
+  // faint star haze for milky texture
+  const hpal = ['160,175,215','190,180,220','210,205,225'];
+  for (let i = 0; i < 750; i++){
+    const rr = Math.sqrt(rng.next()) * gal.R * 0.98;
+    const ang = rng.next() * TAU;
+    const al = (0.05 + rng.next() * 0.16) * (1 - rr / 1300);
+    if (al <= 0) continue;
+    x.fillStyle = 'rgba(' + rng.pick(hpal) + ',' + al.toFixed(3) + ')';
+    const s2 = rng.range(0.6, 1.6);
+    x.fillRect(P(Math.cos(ang) * rr), P(Math.sin(ang) * rr), s2, s2);
+  }
+  gal.layer = c;
+}
+let thumbDirty = false, lastThumb = 0;
+function buildThumb(gal, rot){
+  const S2 = 256;
+  const base = document.createElement('canvas'); base.width = base.height = S2;
+  const x = base.getContext('2d');
+  const P = v => (v + 1100) / 2200 * S2;
+  x.fillStyle = '#05070d'; x.fillRect(0, 0, S2, S2);
+  for (const n of gal.nebulae){
+    const rc = hexRGB(n.col);
+    const gr = x.createRadialGradient(P(n.x), P(n.y), 0, P(n.x), P(n.y), n.r / 2200 * S2);
+    gr.addColorStop(0, 'rgba(' + rc[0] + ',' + rc[1] + ',' + rc[2] + ',' + (n.a * 0.9).toFixed(3) + ')');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = gr; x.fillRect(0, 0, S2, S2);
+  }
+  let gr2 = x.createRadialGradient(S2/2, S2/2, 0, S2/2, S2/2, 55);
+  gr2.addColorStop(0, 'rgba(255,215,150,0.75)'); gr2.addColorStop(1, 'rgba(255,170,90,0)');
+  x.fillStyle = gr2; x.beginPath(); x.arc(S2/2, S2/2, 55, 0, TAU); x.fill();
+  for (const st of gal.stars){
+    x.globalAlpha = 0.12 + st.b * 0.4;
+    x.fillStyle = 'rgba(205,215,240,1)';
+    const s2 = st.b > 0.85 ? 1.7 : 1;
+    x.fillRect(P(st.x), P(st.y), s2, s2);
+  }
+  x.globalAlpha = 1;
+  const rc = document.createElement('canvas'); rc.width = rc.height = S2;
+  const xr = rc.getContext('2d');
+  xr.translate(S2/2, S2/2); xr.rotate(rot); xr.drawImage(base, -S2/2, -S2/2);
+  gal.thumb = rc;
+}
+
+/* ================= 06 · CAMERA & TRANSFORMS ================= */
+function g2v(x, y){ const c = Math.cos(S.rot.cur), s = Math.sin(S.rot.cur); return [x * c - y * s, x * s + y * c]; }
+function v2g(x, y){ const c = Math.cos(S.rot.cur), s = Math.sin(S.rot.cur); return [x * c + y * s, -x * s + y * c]; }
+function starScreen(x, y){
+  const v = g2v(x, y);
+  return [(v[0] - S.cam.x) * S.cam.z + W/2, (v[1] - S.cam.y) * S.cam.z + H/2];
+}
+function screenToView(sx, sy){ return [(sx - W/2) / S.cam.z + S.cam.x, (sy - H/2) / S.cam.z + S.cam.y]; }
+function screenToGalaxy(sx, sy){ const v = screenToView(sx, sy); return v2g(v[0], v[1]); }
+function camUpdate(dt){
+  const c = S.cam;
+  const k = 1 - Math.exp(-6.5 * dt);
+  const sp = 620 * dt / c.z;
+  if (S.keys.has('up')) c.ty -= sp;
+  if (S.keys.has('down')) c.ty += sp;
+  if (S.keys.has('left')) c.tx -= sp;
+  if (S.keys.has('right')) c.tx += sp;
+  c.x += (c.tx - c.x) * k;
+  c.y += (c.ty - c.y) * k;
+  c.z = clamp(c.z + (c.tz - c.z) * k, ZMIN, ZMAX);
+  c.tz = clamp(c.tz, ZMIN, ZMAX);
+  S.rot.cur += (S.rot.target - S.rot.cur) * (1 - Math.exp(-5 * dt));
+  if (S.transit){
+    if (Math.abs(c.x - c.tx) < 1 && Math.abs(c.y - c.ty) < 1 && Math.abs(c.z - c.tz) < 0.004){
+      const lbl = S.transit.label;
+      S.transit = null;
+      if (lbl && lbl !== 'RESET') setStatus('STANDBY');
+      if (S.sound) SND.play('nav');
+      if (S.pendingInspect){ const p = S.pendingInspect; S.pendingInspect = null; enterSystem(p); }
+    }
+  }
+}
+function flyTo(x, y, zoom, label){
+  const v = g2v(x, y);
+  S.cam.tx = v[0]; S.cam.ty = v[1];
+  S.cam.tz = clamp(zoom != null ? zoom : Math.max(S.cam.tz, 2.3), ZMIN, ZMAX);
+  S.transit = { label: label || '' };
+  setStatus(S.transit.label ? 'TRANSIT → ' + S.transit.label : 'TRANSITING');
+  if (S.sound) SND.play('nav');
+}
+function resetCam(){
+  S.cam.tx = 0; S.cam.ty = 0; S.cam.tz = S.fit;
+  S.transit = { label:'RESET' };
+  setStatus('RESET VIEW');
+}
+function focusSelected(){
+  if (!S.sel) return;
+  if (S.sel.kind === 'core') flyTo(0, 0, Math.max(S.cam.tz, 1.5), 'NUCLEUS');
+  else flyTo(S.sel.st.x, S.sel.st.y, Math.max(S.cam.tz, 2.6), S.sel.st.name);
+}
+function discoverRandom(){
+  const g = S.gal; if (!g) return;
+  let pool = g.stars.filter(s => s.notable >= 4 || s.hab > 0 || s.cls === 'O');
+  if (pool.length < 30) pool = g.notableList;
+  const st = pool[Math.floor(Math.random() * pool.length)];
+  select({ kind:'star', st });
+  flyTo(st.x, st.y, clamp(Math.max(S.cam.tz, 2.2), ZMIN, ZMAX), 'RANDOM SYSTEM');
+  log('DISCOVERING — ' + st.name + (st.hab ? ' (HABITABLE CANDIDATES)' : ''), 'accent');
+}
+
+/* ================= 07 · RENDER: GALAXY ================= */
+function starVisible(st){
+  const f = S.filters;
+  if (!f[st.cls]) return false;
+  if (f.hab && st.hab === 0) return false;
+  if (f.multi && st.stars < 2) return false;
+  if (f.planet && st.planets === 0) return false;
+  return true;
+}
+function drawCore(x, now){
+  const g = S.gal;
+  const [sx, sy] = starScreen(0, 0);
+  if (sx < -300 || sx > W + 300 || sy < -300 || sy > H + 300) return;
+  const z = S.cam.z;
+  const gs = clamp(120 * z, 24, 420);
+  x.globalAlpha = 0.55;
+  x.drawImage(SPR.core, sx - gs/2, sy - gs/2, gs, gs);
+  x.globalAlpha = 1;
+  x.save();
+  x.translate(sx, sy); x.rotate(0.5);
+  const R1 = clamp(26 * z, 9, 160) * g.core.ring;
+  x.setLineDash([Math.max(6, R1 * 0.35), Math.max(4, R1 * 0.22)]);
+  x.lineDashOffset = -now * 0.02;
+  x.strokeStyle = 'rgba(255,214,150,0.4)';
+  x.lineWidth = Math.max(1.5, 2.5 * Math.min(1.5, z * 0.5));
+  x.beginPath(); x.ellipse(0, 0, R1, R1 * 0.42, 0, 0, TAU); x.stroke();
+  x.strokeStyle = 'rgba(255,190,120,0.16)';
+  x.lineDashOffset = now * 0.015;
+  x.beginPath(); x.ellipse(0, 0, R1 * 1.55, R1 * 1.55 * 0.42, 0, 0, TAU); x.stroke();
+  x.setLineDash([]);
+  const ha = now * 0.0016;
+  x.globalAlpha = 0.9; x.fillStyle = '#fff3d0';
+  x.beginPath(); x.arc(Math.cos(ha) * R1, Math.sin(ha) * R1 * 0.42, Math.max(1.6, 2.4 * Math.min(1.5, z * 0.5)), 0, TAU); x.fill();
+  x.globalAlpha = 1;
+  const rp = clamp(6 * z, 3, 16);
+  x.strokeStyle = 'rgba(255,242,208,0.85)'; x.lineWidth = 1.4;
+  x.beginPath(); x.arc(0, 0, rp, 0, TAU); x.stroke();
+  x.fillStyle = '#020308';
+  x.beginPath(); x.arc(0, 0, rp * 0.72, 0, TAU); x.fill();
+  x.restore();
+  if (S.showLabels && z > 0.5){
+    x.fillStyle = 'rgba(255,220,170,0.7)';
+    x.font = '10px ' + MONO;
+    x.fillText(g.core.name, sx + R1 * 0.5 + 10, sy + 3);
+  }
+}
+function renderGalaxy(now){
+  const x = D.ctx;
+  const g = S.gal; if (!g) return;
+  x.clearRect(0, 0, W, H);
+  x.drawImage(D.bg, 0, 0, W, H);
+  const z = S.cam.z;
+  const introA = S.intro < 1 ? easeOut(S.intro) : 1;
+  const drawLayer = (layer, alpha) => {
+    if (!layer || alpha <= 0.001) return;
+    x.save();
+    x.globalAlpha = alpha;
+    x.translate(W/2, H/2);
+    x.rotate(S.rot.cur);
+    x.scale(z, z);
+    x.drawImage(layer, -1100, -1100, 2200, 2200);
+    x.restore();
+  };
+  if (S.crossfade){
+    const p = clamp((now - S.crossfade.t0) / 700, 0, 1);
+    drawLayer(S.crossfade.from, (1 - p) * introA);
+    drawLayer(g.layer, p * introA);
+    if (p >= 1) S.crossfade = null;
+  } else drawLayer(g.layer, introA);
+  // grid
+  if (z > 0.85 && S.quality > 0){
+    const step = 100;
+    const x0 = S.cam.x - W/2/z, x1 = S.cam.x + W/2/z;
+    const y0 = S.cam.y - H/2/z, y1 = S.cam.y + H/2/z;
+    x.strokeStyle = 'rgba(120,150,200,0.04)';
+    x.lineWidth = 1;
+    x.beginPath();
+    for (let gv = Math.floor(x0/step) * step; gv <= x1; gv += step){
+      const sx = (gv - S.cam.x) * z + W/2;
+      x.moveTo(sx, 0); x.lineTo(sx, H);
+    }
+    for (let gv = Math.floor(y0/step) * step; gv <= y1; gv += step){
+      const sy = (gv - S.cam.y) * z + H/2;
+      x.moveTo(0, sy); x.lineTo(W, sy);
+    }
+    x.stroke();
+  }
+  // stars
+  const pad = 40/z;
+  const x0 = S.cam.x - W/2/z - pad, x1 = S.cam.x + W/2/z + pad;
+  const y0 = S.cam.y - H/2/z - pad, y1 = S.cam.y + H/2/z + pad;
+  const rc = Math.cos(S.rot.cur), rs = Math.sin(S.rot.cur);
+  const twOn = S.quality > 0;
+  const labelList = [];
+  for (const st of g.stars){
+    if (!starVisible(st) && S.sel !== st && S.hover !== st) continue;
+    const vx = st.x * rc - st.y * rs;
+    const vy = st.x * rs + st.y * rc;
+    if (vx < x0 || vx > x1 || vy < y0 || vy > y1) continue;
+    const sx = (vx - S.cam.x) * z + W/2;
+    const sy = (vy - S.cam.y) * z + H/2;
+    if (sx < -40 || sx > W + 40 || sy < -40 || sy > H + 40) continue;
+    let a = 0.25 + 0.75 * st.b;
+    if (twOn) a *= 0.84 + 0.16 * Math.sin(now * 0.001 * st.twS * 2 + st.tw);
+    if (S.hover === st) a = Math.min(1, a + 0.25);
+    if (S.sel === st) a = 1;
+    const sizePx = clamp(st.size * (0.5 + 0.8 * z), 0.5, 54);
+    if (sizePx < 1.1 && S.quality === 0){
+      x.globalAlpha = a * 0.9;
+      x.fillStyle = st.anom ? '#b98cff' : CLASSES[st.ci].col;
+      x.fillRect(sx, sy, 1.3, 1.3);
+      if (S.showLabels) labelList.push([sx, sy, st]);
+      continue;
+    }
+    const dr = sizePx * 2.6;
+    x.globalAlpha = a;
+    x.drawImage(st.anom ? SPR.anom : SPR.cls[st.ci], sx - dr/2, sy - dr/2, dr, dr);
+    if (st.anom){
+      x.globalAlpha = 0.35;
+      x.strokeStyle = '#b98cff';
+      x.beginPath(); x.arc(sx, sy, 8 + 4 * Math.sin(now * 0.002 + st.tw) + sizePx, 0, TAU); x.stroke();
+    }
+    if (S.showLabels) labelList.push([sx, sy, st]);
+  }
+  x.globalAlpha = 1;
+  // constellation lines from selection
+  if (S.sel && S.sel.kind === 'star' && z > 0.4 && z < 6 && S.quality > 0){
+    const sel = S.sel.st;
+    const [ssx, ssy] = starScreen(sel.x, sel.y);
+    const near = [];
+    for (const st of g.stars){
+      if (st === sel || !starVisible(st)) continue;
+      const dx = st.x - sel.x, dy = st.y - sel.y;
+      if (dx*dx + dy*dy < 16900) near.push([dx*dx + dy*dy, st]);
+    }
+    near.sort((a, b) => a[0] - b[0]);
+    if (near.length){
+      x.strokeStyle = 'rgba(150,180,230,0.08)';
+      x.lineWidth = 1;
+      x.beginPath();
+      for (let i = 0; i < Math.min(5, near.length); i++){
+        const pp = starScreen(near[i][1].x, near[i][1].y);
+        x.moveTo(ssx, ssy); x.lineTo(pp[0], pp[1]);
+      }
+      x.stroke();
+    }
+  }
+  // nebula labels
+  if (S.showLabels && z > 0.6 && z < 2.6){
+    const al = clamp((z - 0.6) / 0.5, 0, 1) * clamp((2.6 - z) / 0.6, 0, 1);
+    if (al > 0.02){
+      x.font = '9px ' + MONO;
+      for (const n of g.nebulae){
+        const pp = starScreen(n.x, n.y);
+        if (pp[0] < -60 || pp[0] > W + 60 || pp[1] < -60 || pp[1] > H + 60) continue;
+        x.fillStyle = 'rgba(180,195,225,' + (0.3 * al).toFixed(3) + ')';
+        x.fillText('· ' + n.name, pp[0] + 14, pp[1]);
+      }
+    }
+  }
+  drawCore(x, now);
+  // search flash rings
+  if (S.searchFlash.length){
+    for (const f of S.searchFlash){
+      const p = (now - f.t0) / 1400;
+      if (p >= 1) continue;
+      const pp = starScreen(f.st.x, f.st.y);
+      x.globalAlpha = (1 - p) * 0.5;
+      x.strokeStyle = '#6f9fd4';
+      x.beginPath(); x.arc(pp[0], pp[1], 6 + p * 40, 0, TAU); x.stroke();
+    }
+    x.globalAlpha = 1;
+    S.searchFlash = S.searchFlash.filter(f => now - f.t0 < 1400);
+  }
+  // labels
+  if (S.showLabels && labelList.length){
+    const cap = S.quality === 2 ? 34 : (S.quality === 1 ? 20 : 10);
+    const zTier = z < 1 ? 5.5 : (z < 2.4 ? 2.6 : 0.3);
+    const chosen = new Set();
+    if (S.sel && S.sel.kind === 'star') chosen.add(S.sel.st);
+    if (S.hover) chosen.add(S.hover);
+    if (z < 2.4) for (let i = 0; i < 6 && i < g.notableList.length; i++) chosen.add(g.notableList[i]);
+    for (const ent of labelList){
+      if (chosen.has(ent[2])) continue;
+      if (ent[2].notable >= zTier) chosen.add(ent[2]);
+      if (chosen.size >= cap) break;
+    }
+    x.font = '9.5px ' + MONO;
+    for (const st of chosen){
+      const pp = starScreen(st.x, st.y);
+      if (pp[0] < 0 || pp[0] > W || pp[1] < 0 || pp[1] > H) continue;
+      const al = st === (S.sel && S.sel.kind === 'star' ? S.sel.st : null) ? 0.95 : clamp(0.35 + st.notable * 0.08, 0.35, 0.8);
+      x.fillStyle = 'rgba(0,0,0,0.55)';
+      x.fillText(st.name, pp[0] + 11, pp[1] - 9);
+      x.fillStyle = 'rgba(205,218,240,' + al.toFixed(2) + ')';
+      x.fillText(st.name, pp[0] + 10, pp[1] - 10);
+      x.strokeStyle = 'rgba(205,218,240,' + (al * 0.5).toFixed(2) + ')';
+      x.beginPath(); x.moveTo(pp[0] + 3, pp[1] - 3); x.lineTo(pp[0] + 9, pp[1] - 9); x.stroke();
+    }
+  }
+  // hover ring
+  if (S.hover && S.hover !== (S.sel && S.sel.kind === 'star' ? S.sel.st : null)){
+    const pp = starScreen(S.hover.x, S.hover.y);
+    x.strokeStyle = 'rgba(200,215,240,0.3)';
+    x.lineWidth = 1;
+    x.beginPath(); x.arc(pp[0], pp[1], clamp(S.hover.size * (0.5 + 0.8 * z), 4, 40) * 1.5 + 5, 0, TAU); x.stroke();
+  }
+  // selection reticle
+  if (S.sel){
+    const pp = S.sel.kind === 'core' ? starScreen(0, 0) : starScreen(S.sel.st.x, S.sel.st.y);
+    const r0 = 15 * (1 + 0.12 * Math.sin(now * 0.0025)) + (S.sel.kind === 'core' ? 14 : 0);
+    x.save();
+    x.translate(pp[0], pp[1]);
+    x.rotate(now * 0.0006);
+    x.strokeStyle = 'rgba(226,166,85,0.85)';
+    x.lineWidth = 1.3;
+    for (let i = 0; i < 4; i++){
+      const a0 = i * Math.PI/2 + Math.PI/8;
+      x.beginPath(); x.arc(0, 0, r0, a0, a0 + Math.PI/4); x.stroke();
+    }
+    x.setLineDash([3, 5]);
+    x.strokeStyle = 'rgba(226,166,85,0.4)';
+    x.beginPath(); x.arc(0, 0, r0 + 7, 0, TAU); x.stroke();
+    x.setLineDash([]);
+    x.restore();
+    x.font = '9px ' + MONO;
+    x.fillStyle = 'rgba(226,166,85,0.8)';
+    x.fillText(S.sel.kind === 'core' ? 'NUCLEUS' : S.sel.st.id, pp[0] + r0 + 12, pp[1] + 14);
+  }
+  // search scanline sweep
+  if (S.scanT != null){
+    const p = (now - S.scanT) / 900;
+    if (p >= 1) S.scanT = null;
+    else {
+      const sx = p * W;
+      const gr = x.createLinearGradient(sx - 120, 0, sx, 0);
+      gr.addColorStop(0, 'rgba(111,159,212,0)');
+      gr.addColorStop(1, 'rgba(111,159,212,0.12)');
+      x.fillStyle = gr; x.fillRect(sx - 120, 0, 120, H);
+      x.fillStyle = 'rgba(111,159,212,0.5)';
+      x.fillRect(sx, 0, 1.5, H);
+    }
+  }
+}
+
+/* ================= 08 · RENDER: PLANETARY SYSTEM ================= */
+function getSysData(st){
+  const cache = S.gal.sysCache;
+  if (cache.has(st.i)) return cache.get(st.i);
+  const rng = new RNG('SYS|' + S.gal.seed + '|' + st.i);
+  const hzIn = 0.85 * Math.sqrt(st.L);
+  const hzOut = 1.95 * Math.sqrt(st.L);
+  const n = st.planets;
+  const aMin = Math.max(0.06, hzIn * 0.32);
+  const aMax = hzOut * (2.2 + rng.range(0, 2.4));
+  const planets = [];
+  for (let i = 0; i < n; i++){
+    const a = aMin * Math.pow(aMax / aMin, n === 1 ? 0.5 : i / (n - 1)) * (1 + rng.gauss() * 0.05);
+    let type;
+    if (a < hzIn * 0.5) type = rng.pick(['rocky','lava','rocky']);
+    else if (a < hzIn) type = rng.pick(['rocky','ice','lava']);
+    else if (a <= hzOut) type = rng.pick(['ocean','super','desert','ocean']);
+    else if (a < hzOut * 2.4) type = rng.pick(['gas','rocky','gas','ice']);
+    else type = rng.pick(['gas','iceg','iceg','ice']);
+    let rad;
+    switch (type){
+      case 'rocky': rad = rng.range(0.35, 1.1); break;
+      case 'ocean': rad = rng.range(0.8, 1.5); break;
+      case 'desert': rad = rng.range(0.7, 1.3); break;
+      case 'lava': rad = rng.range(0.4, 1.0); break;
+      case 'ice': rad = rng.range(0.8, 1.8); break;
+      case 'gas': rad = rng.range(8, 13.5); break;
+      case 'iceg': rad = rng.range(3.4, 5.6); break;
+      default: rad = rng.range(1.4, 2.2);
+    }
+    const Teq = 255 * Math.pow(st.L, 0.25) / Math.sqrt(a);
+    const hab = Teq >= 200 && Teq <= 320 && rad >= 0.65 && rad <= 2.2 ? 1 : 0;
+    let moons = 0;
+    if (type === 'gas') moons = rng.int(0, 4);
+    else if (type === 'iceg') moons = rng.int(0, 3);
+    else if (type === 'rocky' || type === 'ocean' || type === 'super') moons = rng.int(0, 2);
+    const atmo = {
+      rocky: rng.pick(['NONE','TRACE CO₂']), ocean:'N₂–O₂', desert:'CO₂–N₂',
+      lava: rng.pick(['NONE','THIN SODA']), ice:'N₂–CH₄', gas:'H–He', iceg:'H–He–CH₄', super:'N₂–CO₂–O₂'
+    }[type];
+    planets.push({
+      name: isCatalog(st) ? st.name + ' ' + String.fromCharCode(96 + i) : genPlanetName(rng),
+      type, a, rad, Teq, moons, atmo, hab,
+      a0: rng.next() * TAU, per: 7 * Math.pow(a, 1.5),
+      col: PTYPE[type].c, label: PTYPE[type].n
+    });
+  }
+  planets.sort((p, q) => p.a - q.a);
+  if (isCatalog(st)) planets.forEach((p, i) => { p.name = st.name + ' ' + String.fromCharCode(96 + i); });
+  let belt = null;
+  if (n >= 2 && rng.next() < 0.65){
+    const gi = rng.int(0, n - 2);
+    const b0 = planets[gi].a * rng.range(1.15, 1.4);
+    const b1 = planets[gi + 1].a * rng.range(0.7, 0.9);
+    if (b1 > b0 * 1.2){
+      const dots = [];
+      for (let i = 0; i < 160 + rng.int(0, 120); i++) dots.push({ a: rng.next() * TAU, d: rng.range(-1, 1) });
+      belt = { b0, b1, dots };
+    }
+  }
+  let maxRv = 0;
+  for (const p of planets) maxRv = Math.max(maxRv, Math.pow(p.a, 0.62));
+  maxRv = Math.max(maxRv, Math.pow(hzOut, 0.62) * 1.15);
+  if (belt) maxRv = Math.max(maxRv, Math.pow(belt.b1, 0.62) * 1.1);
+  const data = { st, hzIn, hzOut, planets, belt, maxRv: Math.max(1, maxRv) };
+  cache.set(st.i, data);
+  return data;
+}
+function sysCamUpdate(dt){
+  const c = S.sys.cam;
+  const k = 1 - Math.exp(-7 * dt);
+  c.x += (c.tx - c.x) * k;
+  c.y += (c.ty - c.y) * k;
+  c.z = clamp(c.z + (c.tz - c.z) * k, 0.2, 10);
+  c.tz = clamp(c.tz, 0.2, 10);
+}
+function planetPos(p){
+  const cam = S.sys.cam;
+  const rr = Math.pow(p.a, 0.62) * S.sys.K;
+  const ang = p.a0 + S.simT / p.per;
+  const x = Math.cos(ang) * rr, y = Math.sin(ang) * rr * 0.5;
+  return [(x - cam.x) * cam.z + W/2, (y - cam.y) * cam.z + H/2, clamp((1.8 + 2.8 * Math.pow(p.rad, 0.55)) * (0.55 + 0.45 * clamp(cam.z, 0.5, 2)), 2, 42)];
+}
+function renderSys(now){
+  const x = D.sctx;
+  const sys = S.sys; if (!sys) return;
+  x.clearRect(0, 0, W, H);
+  x.drawImage(D.bg, 0, 0, W, H);
+  x.fillStyle = 'rgba(2,4,8,0.35)';
+  x.fillRect(0, 0, W, H);
+  const cam = sys.cam;
+  const cx = (0 - cam.x) * cam.z + W/2;
+  const cy = (0 - cam.y) * cam.z + H/2;
+  const K = sys.K * cam.z;
+  if (sys.isCore){
+    const R = 90 * cam.z;
+    x.save();
+    x.translate(cx, cy); x.rotate(0.5);
+    for (let i = 0; i < 4; i++){
+      const rr = R * (1 + i * 0.45);
+      x.setLineDash([Math.max(8, rr * 0.4), Math.max(5, rr * 0.25)]);
+      x.lineDashOffset = -S.simT * 14 * (i % 2 ? 1 : -1);
+      x.strokeStyle = 'rgba(255,' + (205 - i * 15) + ',' + (140 - i * 10) + ',' + (0.34 - i * 0.06).toFixed(2) + ')';
+      x.lineWidth = Math.max(2, 5 - i);
+      x.beginPath(); x.ellipse(0, 0, rr, rr * 0.38, 0, 0, TAU); x.stroke();
+    }
+    x.setLineDash([]);
+    const rp = R * 0.5;
+    x.strokeStyle = 'rgba(255,242,208,0.9)';
+    x.lineWidth = 2;
+    x.beginPath(); x.ellipse(0, 0, rp, rp * 0.38, 0, 0, TAU); x.stroke();
+    const gs = R * 4;
+    x.globalAlpha = 0.4;
+    x.drawImage(SPR.coreHot, -gs/2, -gs/2, gs, gs);
+    x.globalAlpha = 1;
+    x.fillStyle = '#020308';
+    x.beginPath(); x.ellipse(0, 0, R * 0.34, R * 0.34 * 0.38, 0, 0, TAU); x.fill();
+    x.restore();
+    for (let i = 0; i < 6; i++){
+      const rr = R * (2.2 + i * 0.35);
+      const ang = S.simT / (3 + i) + i * 1.7;
+      const px = cx + Math.cos(ang) * rr;
+      const py = cy + Math.sin(ang) * rr * 0.38;
+      x.fillStyle = 'rgba(220,230,250,0.8)';
+      x.beginPath(); x.arc(px, py, 1.8, 0, TAU); x.fill();
+    }
+    if (S.showLabels){
+      x.font = '10px ' + MONO;
+      x.fillStyle = 'rgba(255,220,170,0.7)';
+      x.fillText(S.gal.core.name + ' — NUCLEAR ACCRETION FIELD', cx + R * 2.6 + 16, cy + 3);
+    }
+    return;
+  }
+  const st = sys.data.st;
+  // habitable zone band
+  const hzi = Math.pow(sys.data.hzIn, 0.62) * K;
+  const hzo = Math.pow(sys.data.hzOut, 0.62) * K;
+  if (hzo > 4 && hzo < Math.max(W, H) * 3){
+    x.strokeStyle = 'rgba(226,166,85,0.06)';
+    x.lineWidth = Math.max(2, hzo - hzi);
+    x.beginPath(); x.ellipse(cx, cy, (hzi + hzo) / 2, (hzi + hzo) / 2 * 0.5, 0, 0, TAU); x.stroke();
+    if (cam.z > 0.6 && hzo < Math.max(W, H)){
+      x.font = '8.5px ' + MONO;
+      x.fillStyle = 'rgba(226,166,85,0.28)';
+      const ang = -0.7;
+      x.fillText('HZ', cx + Math.cos(ang) * (hzi + hzo) / 2 + 6, cy + Math.sin(ang) * (hzi + hzo) / 2 * 0.5);
+    }
+  }
+  // orbits
+  for (const p of sys.data.planets){
+    const rr = Math.pow(p.a, 0.62) * K;
+    if (rr < 2 || rr > Math.max(W, H) * 3) continue;
+    x.strokeStyle = sys.sel === p ? 'rgba(226,166,85,0.3)' : 'rgba(140,168,215,0.10)';
+    x.lineWidth = 1;
+    x.beginPath(); x.ellipse(cx, cy, rr, rr * 0.5, 0, 0, TAU); x.stroke();
+  }
+  // asteroid belt
+  if (sys.data.belt){
+    const b0 = sys.data.belt, spin = S.simT * 0.02;
+    x.fillStyle = 'rgba(160,165,180,0.4)';
+    for (const d of b0.dots){
+      const rr = Math.pow(b0.b0 + (b0.b1 - b0.b0) * (d.d * 0.5 + 0.5), 0.62) * K;
+      if (rr > Math.max(W, H) * 2) continue;
+      const ang = d.a + spin;
+      const px = cx + Math.cos(ang) * rr;
+      const py = cy + Math.sin(ang) * rr * 0.5;
+      if (px < -10 || px > W + 10 || py < -10 || py > H + 10) continue;
+      x.fillRect(px, py, 1.4, 1.4);
+    }
+  }
+  // depth-sorted objects
+  const objs = [];
+  const starBase = 14 + 26 * Math.min(1.8, Math.pow(st.L, 0.1));
+  const starPx = clamp(starBase * (0.5 + 0.5 * cam.z), 10, 80);
+  objs.push({ y: cy, kind: 'star', px: cx, py: cy, size: starPx });
+  for (const c of st.comp){
+    const rr = Math.pow(c.d * 0.35, 0.62) * K;
+    const ang = S.simT / (4 + c.d * 0.8) * c.dir;
+    objs.push({ y: cy + Math.sin(ang) * rr * 0.5, kind: 'comp', c, px: cx + Math.cos(ang) * rr, py: cy + Math.sin(ang) * rr * 0.5 });
+  }
+  for (const p of sys.data.planets){
+    const pp = planetPos(p);
+    objs.push({ y: pp[1], kind: 'planet', p, px: pp[0], py: pp[1], size: pp[2] });
+  }
+  objs.sort((a, b) => a.y - b.y);
+  for (const o of objs){
+    if (o.kind === 'star'){
+      const dr = o.size * 2.4;
+      x.globalAlpha = 0.95;
+      x.drawImage(SPR.cls[st.ci], o.px - dr/2, o.py - dr/2, dr, dr);
+      x.globalAlpha = 1;
+      x.fillStyle = '#fff8ec';
+      x.beginPath(); x.arc(o.px, o.py, o.size * 0.16, 0, TAU); x.fill();
+      if (S.showLabels){
+        x.font = '9.5px ' + MONO;
+        x.fillStyle = 'rgba(205,218,240,0.75)';
+        x.fillText(st.name, o.px + o.size * 0.4 + 10, o.py - 8);
+      }
+    } else if (o.kind === 'comp'){
+      const sz = (5 + 9 * o.c.s) * clamp(0.6 + 0.4 * cam.z, 0.6, 1.6);
+      const dr = sz * 2.6;
+      x.globalAlpha = 0.9;
+      const ci = CLASSES.findIndex(c2 => c2.k === o.c.k);
+      x.drawImage(SPR.cls[ci], o.px - dr/2, o.py - dr/2, dr, dr);
+      x.globalAlpha = 1;
+    } else {
+      const p = o.p;
+      if (p.type === 'lava'){
+        const dr = o.size * 4;
+        x.globalAlpha = 0.4;
+        x.drawImage(makeSpriteCache.lava, o.px - dr/2, o.py - dr/2, dr, dr);
+        x.globalAlpha = 1;
+      }
+      x.fillStyle = p.col;
+      x.beginPath(); x.arc(o.px, o.py, o.size, 0, TAU); x.fill();
+      x.strokeStyle = 'rgba(255,255,255,0.18)';
+      x.lineWidth = 1;
+      x.beginPath(); x.arc(o.px, o.py, o.size - 0.5, Math.PI, Math.PI * 1.6); x.stroke();
+      if (p.hab){
+        x.strokeStyle = 'rgba(121,201,154,0.55)';
+        x.beginPath(); x.arc(o.px, o.py, o.size + 3, 0, TAU); x.stroke();
+      }
+      if (sys.sel === p){
+        x.strokeStyle = 'rgba(226,166,85,0.85)';
+        x.beginPath(); x.arc(o.px, o.py, o.size + 7, 0, TAU); x.stroke();
+      }
+      if (sys.hoverP === p){
+        x.strokeStyle = 'rgba(200,215,240,0.4)';
+        x.beginPath(); x.arc(o.px, o.py, o.size + 5, 0, TAU); x.stroke();
+      }
+      if ((sys.sel === p || sys.hoverP === p || cam.z > 1.4) && S.showLabels){
+        x.font = '9px ' + MONO;
+        x.fillStyle = 'rgba(205,218,240,0.8)';
+        x.fillText(p.name, o.px + o.size + 6, o.py - o.size - 4);
+      }
+    }
+  }
+  x.globalAlpha = 1;
+}
+const makeSpriteCache = { lava: null };
+function buildExtraSprites(){ makeSpriteCache.lava = makeSprite('#ff7a3d'); }
+
+/* ================= 09 · MINIMAP ================= */
+function updateMinimap(){
+  if (!S.showMinimap || !S.gal || S.gal.thumb == null) return;
+  const s = D.mm.width / 2;
+  const x = D.mctx;
+  x.clearRect(0, 0, s, s);
+  x.drawImage(S.gal.thumb, 0, 0, s, s);
+  const P = v => (v + 1100) / 2200 * s;
+  const z = S.cam.z;
+  const rx0 = clamp(P(S.cam.x - W/2/z), 0, s), rx1 = clamp(P(S.cam.x + W/2/z), 0, s);
+  const ry0 = clamp(P(S.cam.y - H/2/z), 0, s), ry1 = clamp(P(S.cam.y + H/2/z), 0, s);
+  x.strokeStyle = 'rgba(226,166,85,0.8)';
+  x.lineWidth = 1;
+  x.strokeRect(rx0, ry0, Math.max(2, rx1 - rx0), Math.max(2, ry1 - ry0));
+  x.fillStyle = 'rgba(255,210,140,0.9)';
+  x.fillRect(s/2 - 1, s/2 - 1, 2, 2);
+  if (S.sel){
+    let v;
+    if (S.sel.kind === 'core') v = [0, 0]; else v = g2v(S.sel.st.x, S.sel.st.y);
+    x.fillStyle = '#e2a655';
+    x.beginPath(); x.arc(clamp(P(v[0]), 2, s - 2), clamp(P(v[1]), 2, s - 2), 3, 0, TAU); x.fill();
+  }
+}
+function mmJump(e){
+  const r = D.mm.getBoundingClientRect();
+  const px = (e.clientX - r.left) / Math.max(1, r.width);
+  const py = (e.clientY - r.top) / Math.max(1, r.height);
+  S.cam.tx = px * 2200 - 1100;
+  S.cam.ty = py * 2200 - 1100;
+  S.transit = { label:'MAP' };
+  setStatus('TRANSIT → MAP');
+}
+
+/* ================= 10 · SELECTION & INSPECTOR ================= */
+function hitTest(sx, sy){
+  const g = S.gal; if (!g) return null;
+  let best = null, bestD = 1e12;
+  for (const st of g.stars){
+    if (!starVisible(st) && S.sel !== st) continue;
+    const pp = starScreen(st.x, st.y);
+    const dx = sx - pp[0], dy = sy - pp[1];
+    const d = dx*dx + dy*dy;
+    const thr = Math.max(9, st.size * (0.5 + 0.8 * S.cam.z) * 1.4 + 4);
+    if (d < thr * thr && d < bestD){ bestD = d; best = st; }
+  }
+  const cp = starScreen(0, 0);
+  const cd = Math.hypot(sx - cp[0], sy - cp[1]);
+  const cthr = Math.max(16, 12 * S.cam.z);
+  if (cd < cthr && (!best || cd * 1.1 < Math.sqrt(bestD))) return { kind:'core' };
+  return best ? { kind:'star', st: best } : null;
+}
+function select(hit){
+  S.sel = hit;
+  D.tbTarget.textContent = hit ? (hit.kind === 'core' ? S.gal.core.name : hit.st.name) : '—';
+  updateInspector();
+  if (hit){
+    if (S.sound) SND.play('select');
+    if (hit.kind === 'star' && hit.st.hab > 0) log('HABITABLE CANDIDATE(S) DETECTED AROUND ' + hit.st.name, 'accent');
+    else if (hit.kind === 'star' && hit.st.anom) log('ANOMALOUS SPECTRAL SIGNATURE CONFIRMED — ' + hit.st.name, 'warn');
+    else if (hit.kind === 'core') log('TARGET LOCK — ' + S.gal.core.name + ' (GALACTIC NUCLEUS)', 'accent');
+  }
+}
+function clearSel(){
+  if (!S.sel) return;
+  S.sel = null;
+  D.tbTarget.textContent = '—';
+  updateInspector();
+}
+const kv = (l, v) => '<div class="kv-r"><span>' + l + '</span><b>' + v + '</b></div>';
+function starCardHTML(st, inSys){
+  const bc = CLASSES[st.ci].col;
+  const sysName = st.stars === 1 ? 'SINGLE' : (st.stars === 2 ? 'BINARY' : 'TRIPLE');
+  let h = '<div class="insp-card">';
+  h += '<div class="insp-name">' + esc(st.name) + '</div>';
+  h += '<div class="insp-sub">ID ' + st.id + ' · ' + st.spectral + '</div>';
+  h += '<div class="badges"><span class="badge" style="border-color:' + bc + '66;color:' + bc + '">' + st.spectral + '</span><span class="badge">' + sysName + ' SYSTEM</span>';
+  if (st.hab > 0) h += '<span class="badge good">' + st.hab + ' HABITABLE</span>';
+  if (st.anom) h += '<span class="badge warn">ANOMALOUS</span>';
+  h += '</div><div class="kv">';
+  h += kv('SPECTRAL CLASS', st.spectral);
+  h += kv('TEMPERATURE', fmtInt(st.temp) + ' K');
+  h += kv('MASS', st.mass.toFixed(2) + ' M☉');
+  h += kv('RADIUS', st.radius.toFixed(2) + ' R☉');
+  h += kv('AGE', ageStr(st.age));
+  h += kv('DIST FROM CORE', (st.r * 0.05).toFixed(1) + ' kly');
+  h += kv('SYSTEM', sysName);
+  h += kv('PLANETS', String(st.planets));
+  h += kv('HABITABLE CANDIDATES', String(st.hab));
+  h += kv('COORDINATES', 'X ' + sgn(st.x) + ' · Y ' + sgn(st.y));
+  h += '</div>';
+  h += '<div class="meter"><div class="meter-f" style="width:' + Math.round(st.hEst * 100) + '%"></div></div>';
+  h += '<div class="meter-lab">HABITABILITY ESTIMATE ' + Math.round(st.hEst * 100) + '%</div>';
+  h += '<div class="insp-btns">';
+  h += '<button class="btn" data-action="bookmark">' + (isBookmarked(st) ? '★ BOOKMARKED' : '☆ BOOKMARK') + '</button>';
+  if (!inSys) h += '<button class="btn primary" data-action="inspect">' + (S.cam.tz >= 2.0 ? '⊕ INSPECT SYSTEM' : '⊕ APPROACH &amp; INSPECT') + '</button>';
+  h += '</div></div>';
+  return h;
+}
+function planetCardHTML(p, st){
+  let h = '<div class="insp-card">';
+  h += '<div class="insp-name">' + esc(p.name) + '</div>';
+  h += '<div class="insp-sub">ORBIT OF ' + esc(st.name) + '</div>';
+  h += '<div class="badges"><span class="badge">' + p.label + '</span>';
+  if (p.hab) h += '<span class="badge good">HABITABLE</span>';
+  if (p.moons > 0) h += '<span class="badge">' + p.moons + ' MOON' + (p.moons > 1 ? 'S' : '') + '</span>';
+  h += '</div><div class="kv">';
+  h += kv('TYPE', p.label);
+  h += kv('RADIUS', p.rad.toFixed(2) + ' R⊕');
+  h += kv('SURFACE TEMP', fmtInt(p.Teq) + ' K');
+  h += kv('ORBITAL DIST', p.a.toFixed(2) + ' AU');
+  h += kv('ORBITAL PERIOD', Math.pow(p.a, 1.5).toFixed(2) + ' YR');
+  h += kv('MOONS', String(p.moons));
+  h += kv('ATMOSPHERE', p.atmo);
+  h += '</div>';
+  h += '<div class="meter"><div class="meter-f" style="width:' + Math.round((p.hab ? 0.72 : 0.05) * 100) + '%"></div></div>';
+  h += '<div class="meter-lab">HABITABILITY ' + (p.hab ? 'FAVOURABLE' : 'NEGATIVE') + '</div>';
+  h += '<div class="insp-btns"><button class="btn primary" data-action="back">◀ RETURN TO GALAXY</button></div></div>';
+  return h;
+}
+function coreCardHTML(inSys){
+  const c = S.gal.core;
+  let h = '<div class="insp-card">';
+  h += '<div class="insp-name">' + esc(c.name) + '</div>';
+  h += '<div class="insp-sub">ID CORE · GALACTIC NUCLEUS</div>';
+  h += '<div class="badges"><span class="badge warn">SUPERMASSIVE BLACK HOLE</span><span class="badge">SPIN ' + c.spin.toFixed(2) + '</span></div><div class="kv">';
+  h += kv('MASS', c.massM.toFixed(1) + ' × 10⁶ M☉');
+  h += kv('SPIN PARAMETER', c.spin.toFixed(2));
+  h += kv('ACCRETION STATE', c.state);
+  h += kv('EVENT HORIZON', (c.massM * 2.95).toFixed(1) + ' × 10⁶ KM');
+  h += kv('DUST LANE FLUX', String(Math.round(c.spin * 60)));
+  h += kv('ORBITING S-CLUSTER', '6');
+  h += '</div>';
+  h += '<div class="meter"><div class="meter-f" style="width:' + Math.round(c.spin * 100) + '%"></div></div>';
+  h += '<div class="meter-lab">ROTATIONAL ENERGY ' + Math.round(c.spin * 100) + '%</div>';
+  h += '<div class="insp-btns">';
+  h += '<button class="btn" data-action="bookmark-core">' + (isBookmarkedCore() ? '★ BOOKMARKED' : '☆ BOOKMARK') + '</button>';
+  if (!inSys) h += '<button class="btn primary" data-action="inspect-core">⊕ INSPECT NUCLEUS</button>';
+  else h += '<button class="btn primary" data-action="back">◀ RETURN TO GALAXY</button>';
+  h += '</div></div>';
+  return h;
+}
+function emptyCardHTML(){
+  return '<div class="insp-card"><div class="insp-name">NO TARGET</div>' +
+    '<div class="hint">SELECT A STAR ON THE MAP,<br>SEARCH WITH ⌘K,<br>OR SCAN FOR SOMETHING INTERESTING.</div>' +
+    '<div class="insp-btns" style="margin-top:14px"><button class="btn primary" data-action="random">⚡ DISCOVER RANDOM SYSTEM</button></div></div>';
+}
+function updateInspector(){
+  const el = D.rpBody;
+  if (S.view === 'system' && S.sys){
+    D.rpMode.textContent = 'SYSTEM';
+    if (S.sys.isCore) el.innerHTML = coreCardHTML(true);
+    else if (S.sys.sel) el.innerHTML = planetCardHTML(S.sys.sel, S.sys.data.st);
+    else el.innerHTML = starCardHTML(S.sys.data.st, true);
+    return;
+  }
+  D.rpMode.textContent = 'GALAXY';
+  if (!S.sel) el.innerHTML = emptyCardHTML();
+  else if (S.sel.kind === 'core') el.innerHTML = coreCardHTML(false);
+  else el.innerHTML = starCardHTML(S.sel.st, false);
+}
+
+/* ================= 11 · SYSTEM VIEW CONTROL ================= */
+function enterSystem(st){
+  if (S.view === 'system') exitSystem(true);
+  if (!S.gal) return;
+  const data = getSysData(st);
+  S.sys = {
+    isCore: false, star: st, data,
+    cam: { x:0, y:0, z:1, tx:0, ty:0, tz:1 },
+    K: (Math.min(W, H) / 2 - 36) / data.maxRv,
+    sel: null, hoverP: null
+  };
+  S.view = 'system';
+  S.sel = { kind:'star', st };
+  document.body.classList.add('in-system');
+  D.sys.hidden = false;
+  D.sysHud.classList.remove('hidden');
+  D.sysName.textContent = st.name;
+  D.sysSub.textContent = st.spectral + ' · ' + st.planets + ' PLANET' + (st.planets === 1 ? '' : 'S') + ' · ' + (st.stars > 1 ? st.stars + '-STAR' : 'SINGLE STAR');
+  refreshTimeBtns();
+  updateInspector();
+  if (S.sound) SND.play('sysIn');
+  log('ORBITAL CHARTS RECONSTRUCTED FOR ' + st.name, 'info');
+  setStatus('SYSTEM VIEW — ' + st.name);
+}
+function enterCore(){
+  if (S.view === 'system') exitSystem(true);
+  if (!S.gal) return;
+  S.sys = { isCore: true, cam: { x:0, y:0, z:1, tx:0, ty:0, tz:1 }, data: null, K: 1, sel: null, hoverP: null };
+  S.view = 'system';
+  S.sel = { kind:'core' };
+  document.body.classList.add('in-system');
+  D.sys.hidden = false;
+  D.sysHud.classList.remove('hidden');
+  D.sysName.textContent = S.gal.core.name;
+  D.sysSub.textContent = 'SUPERMASSIVE BLACK HOLE · ' + S.gal.core.state;
+  refreshTimeBtns();
+  updateInspector();
+  if (S.sound) SND.play('sysIn');
+  log('DESCENDING INTO ' + S.gal.core.name + ' ACCRETION FIELD', 'accent');
+}
+function exitSystem(silent){
+  if (S.view !== 'system') return;
+  S.view = 'galaxy';
+  S.sys = null;
+  document.body.classList.remove('in-system');
+  D.sys.hidden = true;
+  D.sysHud.classList.add('hidden');
+  hideTooltip();
+  if (!silent){
+    if (S.sound) SND.play('sysOut');
+    log('RETURNED TO GALACTIC VIEW', 'info');
+    setStatus('STANDBY');
+  }
+  updateInspector();
+}
+function inspectCurrent(){
+  if (S.view === 'system' || !S.gal) return;
+  if (S.sel && S.sel.kind === 'core'){ enterCore(); return; }
+  if (S.sel && S.sel.kind === 'star'){
+    const st = S.sel.st;
+    if (S.cam.tz >= 2.0) enterSystem(st);
+    else { S.pendingInspect = st; flyTo(st.x, st.y, 2.35, 'APPROACH ' + st.name); }
+  }
+}
+
+/* ================= 12 · SEARCH ================= */
+let searchTimer = 0;
+function onSearchInput(){
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(runSearch, 130);
+}
+function runSearch(){
+  const q = D.searchInput.value.trim().toLowerCase();
+  const box = D.searchResults;
+  if (!S.gal) return;
+  if (q.length < 1){ box.innerHTML = ''; return; }
+  const res = [];
+  for (const st of S.gal.stars){
+    const n = st.name.toLowerCase();
+    let sc = 0;
+    if (n.startsWith(q)) sc = 3;
+    else if (n.includes(q)) sc = 2;
+    if (sc === 0 && st.id.toLowerCase().includes(q)) sc = 1;
+    if (sc > 0) res.push([sc, st]);
+  }
+  res.sort((a, b) => b[0] - a[0] || a[1].name.localeCompare(b[1].name));
+  const top = res.slice(0, 14);
+  if (!top.length){
+    box.innerHTML = '<div class="empty">NO MATCHES IN VOLUME</div>';
+    S.searchFlash = [];
+    return;
+  }
+  box.innerHTML = top.map((t, i) =>
+    '<div class="res" role="option" data-id="' + t[1].id + '"><span class="dot" style="background:' + CLASSES[t[1].ci].col + '"></span><span class="rname">' + esc(t[1].name) + '</span><span class="rmeta">' + t[1].id + ' · ' + t[1].spectral + '</span></div>'
+  ).join('');
+  S.searchFlash = top.map(t => ({ st: t[1], t0: performance.now() }));
+  S.scanT = performance.now();
+  setStatus('SCANNING…');
+  setTimeout(() => { if (S.status === 'SCANNING…') setStatus('STANDBY'); }, 1000);
+  if (S.sound) SND.play('tick');
+}
+function searchGo(id){
+  const st = S.gal.stars.find(s => s.id === id);
+  if (st){
+    select({ kind:'star', st });
+    flyTo(st.x, st.y, 2.3, st.name);
+  }
+}
+
+/* ================= 13 · BOOKMARKS ================= */
+function loadBookmarks(){
+  const raw = safeGet('astra.bm.v1');
+  if (!raw) return;
+  try {
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) S.bookmarks = arr.slice(0, 40);
+  } catch (e){}
+}
+function saveBookmarks(){ safeSet('astra.bm.v1', JSON.stringify(S.bookmarks)); }
+function isBookmarked(st){ return S.bookmarks.some(b => b.seed === S.gal.seed && b.id === st.id); }
+function isBookmarkedCore(){ return S.bookmarks.some(b => b.seed === S.gal.seed && b.id === 'CORE'); }
+function toggleBookmark(st){
+  if (!st || !S.gal) return;
+  const key = S.gal.seed + '|CORE';
+  const i = S.bookmarks.findIndex(b => b.seed === S.gal.seed && b.id === st.id);
+  if (i >= 0) S.bookmarks.splice(i, 1);
+  else {
+    S.bookmarks.push({ seed: S.gal.seed, id: st.id, name: st.name, cls: st.cls, x: st.x, y: st.y, planets: st.planets, hab: st.hab });
+    if (S.bookmarks.length > 40) S.bookmarks.shift();
+    log('BOOKMARKED — ' + st.name, 'info');
+  }
+  saveBookmarks();
+  renderBookmarks();
+}
+function toggleBookmarkCore(){
+  if (!S.gal) return;
+  const i = S.bookmarks.findIndex(b => b.seed === S.gal.seed && b.id === 'CORE');
+  if (i >= 0) S.bookmarks.splice(i, 1);
+  else {
+    S.bookmarks.push({ seed: S.gal.seed, id: 'CORE', name: S.gal.core.name, cls: 'X', x: 0, y: 0, planets: 0, hab: 0 });
+    log('BOOKMARKED — ' + S.gal.core.name, 'info');
+  }
+  saveBookmarks();
+  renderBookmarks();
+}
+function renderBookmarks(){
+  if (!S.gal) return;
+  D.bmCount.textContent = S.bookmarks.length ? '(' + S.bookmarks.length + ')' : '';
+  if (!S.bookmarks.length){
+    D.bmList.innerHTML = '<div class="empty">NO BOOKMARKS — SELECT A STAR AND PRESS B</div>';
+    return;
+  }
+  D.bmList.innerHTML = S.bookmarks.map((b, i) =>
+    '<div class="bm' + (b.seed !== S.gal.seed ? ' other' : '') + '" data-i="' + i + '">' +
+    '<span class="dot" style="background:' + (b.cls === 'X' ? '#e2a655' : CLASSES[CLASSES.findIndex(c => c.k === b.cls) || 0].col) + '"></span>' +
+    '<span class="bm-name">' + esc(b.name) + '</span>' +
+    '<span class="bm-seed">' + esc(b.seed.length > 9 ? b.seed.slice(0, 9) : b.seed) + '</span>' +
+    '<button class="bm-x" data-x="' + i + '" aria-label="Remove bookmark">×</button></div>'
+  ).join('');
+}
+function goToBookmark(bm){
+  if (!bm) return;
+  if (S.sound) SND.play('nav');
+  const arrive = () => {
+    if (bm.id === 'CORE'){
+      select({ kind:'core' });
+      S.cam.tx = 0; S.cam.ty = 0;
+      S.cam.tz = Math.max(S.cam.tz, 1.4);
+      S.transit = { label:'CORE' };
+      setStatus('TRANSIT → CORE');
+    } else {
+      const st = S.gal.stars.find(s => s.id === bm.id);
+      if (st){ select({ kind:'star', st }); flyTo(st.x, st.y, 2.3, st.name); }
+    }
+  };
+  if (bm.seed === S.gal.seed) arrive();
+  else {
+    log('RESTORING VOLUME ' + bm.seed + '…', 'info');
+    regenerate(bm.seed, 'fast').then(arrive);
+  }
+}
+
+/* ================= 14 · STATS & HUD ================= */
+function updateStats(){
+  const g = S.gal; if (!g) return;
+  D.stTotal.textContent = fmtInt(g.stats.total);
+  let vis = 0;
+  for (const st of g.stars) if (starVisible(st)) vis++;
+  D.stVisible.textContent = fmtInt(vis);
+  D.stMulti.textContent = fmtInt(g.stats.multi);
+  D.stPsys.textContent = fmtInt(g.stats.psys);
+  D.stPlanet.textContent = fmtInt(g.stats.planets);
+  D.stHab.textContent = fmtInt(g.stats.hab);
+  D.stO.textContent = String(g.stats.o);
+}
+function setStatus(t){
+  if (S.status === t) return;
+  S.status = t;
+  D.bbStatus.textContent = t;
+}
+function updateHUD(){
+  const z = S.view === 'system' && S.sys ? S.sys.cam.z : S.cam.z;
+  const pct = Math.round(z / S.fit * 100);
+  if (pct !== S.lastZoomPct){
+    S.lastZoomPct = pct;
+    D.bbZoom.textContent = pct + '%';
+    D.tbZoom.textContent = pct + '%';
+  }
+}
+function updateHUDCoord(){
+  if (S.view !== 'galaxy' || !S.gal) return;
+  const g = screenToGalaxy(S.mouse.x, S.mouse.y);
+  const t = 'X ' + sgn(g[0]) + ' · Y ' + sgn(g[1]);
+  if (t !== S.lastCoord){ S.lastCoord = t; D.bbCoord.textContent = t; }
+}
+
+/* ================= 15 · EVENT LOG ================= */
+function log(msg, tone){
+  tone = tone || 'info';
+  const el = document.createElement('div');
+  el.className = 'lg ' + tone;
+  const t = Math.max(0, Math.floor((performance.now() - S.t0) / 1000));
+  el.innerHTML = '<span class="t">T+' + String(t).padStart(4, '0') + '</span> ' + esc(msg);
+  D.log.appendChild(el);
+  while (D.log.children.length > 6) D.log.removeChild(D.log.firstChild);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 9500);
+}
+function ambientLog(){
+  const g = S.gal; if (!g) return;
+  const fn = AMBIENT[Math.floor(Math.random() * AMBIENT.length)];
+  log(fn(g), 'dim');
+}
+
+/* ================= 16 · SYNTHESIZED SOUND (off by default) ================= */
+const SND = {
+  ctx: null, master: null, noise: null,
+  init(){
+    if (this.ctx) return;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      this.ctx = new AC();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = 0.15;
+      this.master.connect(this.ctx.destination);
+      const len = Math.floor(this.ctx.sampleRate * 0.6);
+      this.noise = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = this.noise.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    } catch (e){ this.ctx = null; }
+  },
+  blip(f, d, type, g, f2){
+    if (!this.ctx) return;
+    try {
+      const t0 = this.ctx.currentTime;
+      const o = this.ctx.createOscillator();
+      const gn = this.ctx.createGain();
+      o.type = type || 'sine';
+      o.frequency.setValueAtTime(f, t0);
+      if (f2) o.frequency.exponentialRampToValueAtTime(Math.max(30, f2), t0 + d);
+      gn.gain.setValueAtTime(0.0001, t0);
+      gn.gain.exponentialRampToValueAtTime(g || 0.3, t0 + 0.012);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+      o.connect(gn); gn.connect(this.master);
+      o.start(t0); o.stop(t0 + d + 0.05);
+    } catch (e){}
+  },
+  whoosh(d, f0, f1){
+    if (!this.ctx || !this.noise) return;
+    try {
+      const t0 = this.ctx.currentTime;
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.noise;
+      const flt = this.ctx.createBiquadFilter();
+      flt.type = 'lowpass';
+      flt.frequency.setValueAtTime(f0, t0);
+      flt.frequency.exponentialRampToValueAtTime(Math.max(40, f1), t0 + d);
+      const gn = this.ctx.createGain();
+      gn.gain.setValueAtTime(0.0001, t0);
+      gn.gain.exponentialRampToValueAtTime(0.5, t0 + 0.08);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+      src.connect(flt); flt.connect(gn); gn.connect(this.master);
+      src.start(t0); src.stop(t0 + d + 0.05);
+    } catch (e){}
+  },
+  play(name){
+    if (!S.sound) return;
+    this.init();
+    if (!this.ctx) return;
+    switch (name){
+      case 'select': this.blip(740, 0.07, 'sine', 0.3); break;
+      case 'hover': this.blip(1900, 0.03, 'sine', 0.07); break;
+      case 'nav': this.blip(420, 0.1, 'sine', 0.25, 640); break;
+      case 'gen': this.whoosh(0.7, 120, 900); break;
+      case 'sysIn': this.blip(300, 0.35, 'sine', 0.25, 1100); break;
+      case 'sysOut': this.blip(900, 0.3, 'sine', 0.2, 240); break;
+      case 'tick': this.blip(1200, 0.035, 'square', 0.08); break;
+    }
+  }
+};
+
+/* ================= 17 · COMMAND PALETTE ================= */
+const PAL_CMDS = [
+  { id:'search', label:'Search stars', k:'INPUT', kw:'find query locate type' },
+  { id:'generate', label:'Generate new galaxy', k:'R', kw:'new random regenerate synthesize seed' },
+  { id:'randstar', label:'Discover random system', k:'⚡', kw:'random pick explore notable' },
+  { id:'core', label:'Go to galactic core', k:'X-1', kw:'center astra x-1 nucleus black hole' },
+  { id:'reset', label:'Reset camera', k:'0', kw:'home zero recenter view' },
+  { id:'map', label:'Toggle minimap', k:'M', kw:'minimap map toggle' },
+  { id:'labels', label:'Toggle star labels', k:'L', kw:'labels names text' },
+  { id:'bookmarks', label:'Open bookmarks', k:'B', kw:'saved favorites list' },
+  { id:'tour', label:'Toggle tour mode', k:'T', kw:'auto cycle autopilot' },
+  { id:'cine', label:'Cinematic mode', k:'C', kw:'hide hud fullscreen clean' },
+  { id:'sound', label:'Toggle synthesized sound', k:'SND', kw:'audio sfx music' },
+  { id:'flip', label:'Rotate galaxy 180°', k:'ROT', kw:'orient rotate turn' }
+];
+let palIdx = 0, palItems = [];
+function openPalette(){
+  D.palWrap.classList.remove('hidden');
+  D.palInput.value = '';
+  palIdx = 0;
+  renderPalList('');
+  D.palInput.focus();
+  if (S.sound) SND.play('tick');
+}
+function closePalette(){
+  D.palWrap.classList.add('hidden');
+  try { D.palInput.blur(); } catch (e){}
+}
+function renderPalList(q){
+  q = (q || '').toLowerCase();
+  palItems = [];
+  for (const c of PAL_CMDS){
+    if (!q || (c.label + ' ' + c.kw).toLowerCase().includes(q)) palItems.push({ cmd: c, label: c.label, k: c.k });
+  }
+  if (q.length >= 2 && S.gal){
+    const res = [];
+    for (const st of S.gal.stars){
+      if (st.name.toLowerCase().includes(q) || st.id.toLowerCase().includes(q)){
+        res.push([st.name.toLowerCase().startsWith(q) ? 2 : 1, st]);
+      }
+      if (res.length >= 8) break;
+    }
+    res.sort((a, b) => b[0] - a[0]);
+    for (const t of res) palItems.push({ star: t[1], label: 'Go to — ' + t[1].name, k: t[1].id });
+  }
+  if (palIdx >= palItems.length) palIdx = Math.max(0, palItems.length - 1);
+  D.palList.innerHTML = palItems.length ? palItems.map((it, i) =>
+    '<div class="pal-item' + (i === palIdx ? ' active' : '') + '" data-i="' + i + '"><span>' + esc(it.label) + '</span><span class="pi-k">' + esc(it.k || '') + '</span></div>'
+  ).join('') : '<div class="pal-item"><span>NO MATCH</span></div>';
+}
+function runPalItem(it){
+  if (!it) return;
+  closePalette();
+  if (it.star){
+    select({ kind:'star', st: it.star });
+    flyTo(it.star.x, it.star.y, 2.3, it.star.name);
+    return;
+  }
+  runCmd(it.cmd.id);
+}
+function runCmd(id){
+  switch (id){
+    case 'search':
+      D.palWrap.classList.add('hidden');
+      if (W < 1180) togglePanel(true);
+      setTimeout(() => D.searchInput.focus(), 60);
+      break;
+    case 'generate': regenerate(randomSeedString(), 'full'); break;
+    case 'randstar': discoverRandom(); break;
+    case 'core':
+      if (!S.gal) return;
+      select({ kind:'core' });
+      flyTo(0, 0, 1.6, 'NUCLEUS');
+      break;
+    case 'reset': resetCam(); break;
+    case 'map': toggleMinimap(); break;
+    case 'labels': toggleLabels(); break;
+    case 'bookmarks':
+      if (W < 1180) togglePanel(true);
+      log('BOOKMARKS — ' + S.bookmarks.length + ' SAVED TARGETS', 'info');
+      break;
+    case 'tour': toggleTour(); break;
+    case 'cine': toggleCine(); break;
+    case 'sound': toggleSound(); break;
+    case 'flip':
+      if (!S.gal) return;
+      setRotation(S.rot.target + Math.PI);
+      break;
+  }
+}
+function setRotation(target){
+  S.rot.target = target;
+  const deg = Math.round(((target % TAU) + TAU) % TAU * 180 / Math.PI) % 360;
+  D.rotSlider.value = deg;
+  D.rotVal.textContent = String(deg).padStart(3, '0') + '°';
+  thumbDirty = true;
+}
+
+/* ================= 18 · UI TOGGLES ================= */
+function togglePanel(open){
+  const willOpen = open != null ? open : !D.lp.classList.contains('collapsed');
+  D.lp.classList.toggle('collapsed', !willOpen);
+  D.lpCollapse.textContent = willOpen ? '–' : '▤';
+  D.btnPanel.classList.toggle('active', !willOpen);
+}
+function toggleMinimap(){
+  S.showMinimap = !S.showMinimap;
+  D.minimap.classList.toggle('mm-off', !S.showMinimap);
+  log('MINIMAP ' + (S.showMinimap ? 'SHOWN' : 'HIDDEN'), 'info');
+}
+function toggleLabels(){
+  S.showLabels = !S.showLabels;
+  log('STAR LABELS ' + (S.showLabels ? 'ON' : 'OFF'), 'info');
+}
+function toggleTour(){
+  S.tour = !S.tour;
+  D.btnTour.setAttribute('aria-pressed', String(S.tour));
+  D.btnTour.classList.toggle('active', S.tour);
+  if (S.tour){
+    S.lastTour = 0;
+    log('TOUR MODE ENGAGED — CYCLING NOTABLE SYSTEMS', 'accent');
+  } else log('TOUR MODE DISENGAGED', 'info');
+}
+let cineTimer = 0;
+function toggleCine(on){
+  if (S.view === 'system') on = false;
+  S.cine = on != null ? on : !S.cine;
+  document.body.classList.toggle('cine', S.cine);
+  D.btnCine.setAttribute('aria-pressed', String(S.cine));
+  D.btnCine.classList.toggle('active', S.cine);
+  clearTimeout(cineTimer);
+  if (S.cine){
+    D.cineHint.classList.remove('hidden');
+    cineTimer = setTimeout(() => D.cineHint.classList.add('hidden'), 2600);
+    log('CINEMATIC MODE — HUD SUPPRESSED', 'info');
+  } else {
+    D.cineHint.classList.add('hidden');
+    log('HUD RESTORED', 'info');
+  }
+}
+function toggleSound(){
+  S.sound = !S.sound;
+  if (S.sound) SND.init();
+  D.btnSound.setAttribute('aria-pressed', String(S.sound));
+  D.btnSound.classList.toggle('active', S.sound);
+  log('SYNTHESIZED SOUND ' + (S.sound ? 'ON' : 'OFF'), 'info');
+  if (S.sound) SND.play('tick');
+}
+function refreshTimeBtns(){
+  document.querySelectorAll('.tbtn').forEach(b => b.classList.toggle('active', parseFloat(b.dataset.ts) === S.timeScale));
+}
+
+/* ================= 19 · EVENTS ================= */
+function showTooltip(name, meta, x, y){
+  D.tooltip.innerHTML = '<div class="tt-name">' + esc(name) + '</div><div class="tt-meta">' + esc(meta) + '</div>';
+  D.tooltip.classList.remove('hidden');
+  moveTooltip(x, y);
+}
+function moveTooltip(x, y){
+  D.tooltip.style.left = Math.min(x + 14, W - 240) + 'px';
+  D.tooltip.style.top = Math.max(10, y - 34) + 'px';
+}
+function hideTooltip(){ D.tooltip.classList.add('hidden'); }
+
+function bindAll(){
+  /* main canvas: pan / pinch / wheel / hover / click */
+  const c = D.main;
+  const pointers = new Map();
+  let drag = null, pinch = null;
+  c.addEventListener('pointerdown', e => {
+    S.lastAct = performance.now();
+    if (S.view === 'system') return;
+    try { c.setPointerCapture(e.pointerId); } catch (er){}
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1){
+      drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: 0, btn: e.button };
+    } else if (pointers.size === 2){
+      const p = [...pointers.values()];
+      pinch = { d: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y), z: S.cam.tz, mx: (p[0].x + p[1].x) / 2, my: (p[0].y + p[1].y) / 2 };
+      drag = null;
+    }
+  });
+  window.addEventListener('pointermove', e => {
+    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (S.view === 'system') return;
+    if (pinch && pointers.size === 2){
+      const p = [...pointers.values()];
+      const d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+      const mx = (p[0].x + p[1].x) / 2, my = (p[0].y + p[1].y) / 2;
+      const nz = clamp(pinch.z * d / Math.max(1, pinch.d), ZMIN, ZMAX);
+      const wx = (pinch.mx - W/2) / pinch.z + S.cam.tx;
+      const wy = (pinch.my - H/2) / pinch.z + S.cam.ty;
+      S.cam.tx = wx - (mx - W/2) / nz;
+      S.cam.ty = wy - (my - H/2) / nz;
+      S.cam.tz = nz;
+      pinch = { d: Math.max(1, d), z: nz, mx, my };
+      S.lastAct = performance.now();
+      return;
+    }
+    if (drag){
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      drag.x = e.clientX; drag.y = e.clientY;
+      drag.moved += Math.abs(dx) + Math.abs(dy);
+      if (drag.moved > 3){
+        S.cam.tx -= dx / S.cam.tz;
+        S.cam.ty -= dy / S.cam.tz;
+        S.cam.x = S.cam.tx; S.cam.y = S.cam.ty;
+        S.transit = null;
+        if (S.pendingInspect) S.pendingInspect = null;
+        if (S.tour) toggleTour();
+        setStatus('PAN');
+      }
+      S.lastAct = performance.now();
+      return;
+    }
+    if (e.pointerType === 'mouse'){
+      S.mouse.x = e.clientX; S.mouse.y = e.clientY;
+      updateHUDCoord();
+      if (e.target !== c){
+        if (S.hover){ S.hover = null; hideTooltip(); c.style.cursor = 'default'; }
+        return;
+      }
+      const h = hitTest(e.clientX, e.clientY);
+      const hs = h && h.kind === 'star' ? h.st : null;
+      if (hs !== S.hover){
+        S.hover = hs;
+        c.style.cursor = hs ? 'pointer' : 'default';
+        if (hs){
+          showTooltip(hs.name, hs.spectral + ' · ' + hs.id + ' · ' + (hs.planets > 0 ? hs.planets + ' PLANETS' : 'NO PLANETS'), e.clientX, e.clientY);
+          if (S.sound) SND.play('hover');
+        } else hideTooltip();
+      } else if (hs) moveTooltip(e.clientX, e.clientY);
+    }
+  });
+  window.addEventListener('pointerup', e => {
+    pointers.delete(e.pointerId);
+    if (pinch && pointers.size < 2) pinch = null;
+    if (drag){
+      if (drag.moved <= 3 && drag.btn === 0 && S.view === 'galaxy'){
+        const h = hitTest(drag.sx, drag.sy);
+        if (h) select(h);
+        else clearSel();
+      }
+      drag = null;
+      if (S.status === 'PAN') setStatus('STANDBY');
+    }
+  });
+  const wheelZoom = (e, cam, mn, mx) => {
+    e.preventDefault();
+    S.lastAct = performance.now();
+    const f = Math.exp(-e.deltaY * 0.0011);
+    const nz = clamp(cam.tz * f, mn, mx);
+    if (nz === cam.tz) return;
+    const vw = ((e.clientX - W/2) / cam.tz + cam.tx);
+    const vh = ((e.clientY - H/2) / cam.tz + cam.ty);
+    cam.tx = vw - (e.clientX - W/2) / nz;
+    cam.ty = vh - (e.clientY - H/2) / nz;
+    cam.tz = nz;
+  };
+  c.addEventListener('wheel', e => {
+    if (S.view !== 'galaxy') return;
+    wheelZoom(e, S.cam, ZMIN, ZMAX);
+    if (S.tour) toggleTour();
+    setStatus('ZOOM ' + Math.round(S.cam.tz / S.fit * 100) + '%');
+  }, { passive: false });
+  c.addEventListener('dblclick', e => {
+    if (S.view !== 'galaxy') return;
+    const f = 1.8;
+    const nz = clamp(S.cam.tz * f, ZMIN, ZMAX);
+    const vw = (e.clientX - W/2) / S.cam.tz + S.cam.tx;
+    const vh = (e.clientY - H/2) / S.cam.tz + S.cam.ty;
+    S.cam.tx = vw - (e.clientX - W/2) / nz;
+    S.cam.ty = vh - (e.clientY - H/2) / nz;
+    S.cam.tz = nz;
+  });
+  c.addEventListener('contextmenu', e => e.preventDefault());
+
+  /* system canvas */
+  let sdrag = null;
+  D.sys.addEventListener('pointerdown', e => {
+    S.lastAct = performance.now();
+    try { D.sys.setPointerCapture(e.pointerId); } catch (er){}
+    sdrag = { x: e.clientX, y: e.clientY, moved: 0 };
+  });
+  D.sys.addEventListener('pointermove', e => {
+    if (!S.sys) return;
+    if (sdrag){
+      const dx = e.clientX - sdrag.x, dy = e.clientY - sdrag.y;
+      sdrag.x = e.clientX; sdrag.y = e.clientY;
+      sdrag.moved += Math.abs(dx) + Math.abs(dy);
+      if (sdrag.moved > 3){
+        S.sys.cam.tx -= dx / S.sys.cam.tz;
+        S.sys.cam.ty -= dy / S.sys.cam.tz;
+        S.sys.cam.x = S.sys.cam.tx; S.sys.cam.y = S.sys.cam.ty;
+      }
+      return;
+    }
+    if (e.pointerType === 'mouse' && !S.sys.isCore){
+      let best = null, bestD = 1e12;
+      for (const p of S.sys.data.planets){
+        const pp = planetPos(p);
+        const d = Math.hypot(e.clientX - pp[0], e.clientY - pp[1]);
+        if (d < Math.max(9, pp[2] + 4) && d < bestD){ bestD = d; best = p; }
+      }
+      if (best !== S.sys.hoverP){
+        S.sys.hoverP = best;
+        D.sys.style.cursor = best ? 'pointer' : 'default';
+        if (best) showTooltip(best.name, best.label + ' · ' + fmtInt(best.Teq) + ' K', e.clientX, e.clientY);
+        else hideTooltip();
+      } else if (best) moveTooltip(e.clientX, e.clientY);
+    }
+  });
+  D.sys.addEventListener('pointerup', e => {
+    if (sdrag && sdrag.moved <= 3 && S.sys){
+      if (S.sys.isCore){
+        S.sys.sel = null;
+        updateInspector();
+      } else {
+        let best = null, bestD = 1e12;
+        for (const p of S.sys.data.planets){
+          const pp = planetPos(p);
+          const d = Math.hypot(e.clientX - pp[0], e.clientY - pp[1]);
+          if (d < Math.max(9, pp[2] + 4) && d < bestD){ bestD = d; best = p; }
+        }
+        if (best){
+          S.sys.sel = best;
+          if (S.sound) SND.play('select');
+          updateInspector();
+        } else {
+          S.sys.sel = null;
+          S.sys.hoverP = null;
+          updateInspector();
+        }
+      }
+    }
+    sdrag = null;
+  });
+  D.sys.addEventListener('wheel', e => {
+    if (!S.sys) return;
+    wheelZoom(e, S.sys.cam, 0.2, 10);
+  }, { passive: false });
+  D.sys.addEventListener('contextmenu', e => e.preventDefault());
+
+  /* minimap */
+  let mmDrag = false;
+  D.mm.addEventListener('pointerdown', e => {
+    mmDrag = true;
+    mmJump(e);
+    try { D.mm.setPointerCapture(e.pointerId); } catch (er){}
+  });
+  D.mm.addEventListener('pointermove', e => { if (mmDrag) mmJump(e); });
+  window.addEventListener('pointerup', () => { mmDrag = false; });
+
+  /* top bar */
+  D.btnNew.addEventListener('click', () => regenerate(randomSeedString(), 'full'));
+  D.btnTour.addEventListener('click', toggleTour);
+  D.btnCine.addEventListener('click', toggleCine);
+  D.btnSound.addEventListener('click', toggleSound);
+  D.btnPanel.addEventListener('click', () => togglePanel());
+  D.lpCollapse.addEventListener('click', () => togglePanel());
+
+  /* left panel */
+  D.searchInput.addEventListener('input', onSearchInput);
+  D.searchInput.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Escape') D.searchInput.blur();
+    else if (e.key === 'Enter'){
+      const first = D.searchResults.querySelector('.res');
+      if (first) searchGo(first.getAttribute('data-id'));
+    }
+  });
+  D.searchResults.addEventListener('click', e => {
+    const r = e.target.closest('.res');
+    if (r) searchGo(r.getAttribute('data-id'));
+  });
+  D.btnRandom.addEventListener('click', discoverRandom);
+  D.btnSeedRand.addEventListener('click', () => { D.seedInput.value = randomSeedString(); });
+  D.btnGenerate.addEventListener('click', () => regenerate(D.seedInput.value || randomSeedString(), 'full'));
+  D.seedInput.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Enter') regenerate(D.seedInput.value || randomSeedString(), 'full');
+    else if (e.key === 'Escape') D.seedInput.blur();
+  });
+  D.fHab.addEventListener('change', () => { S.filters.hab = D.fHab.checked ? 1 : 0; updateStats(); });
+  D.fMulti.addEventListener('change', () => { S.filters.multi = D.fMulti.checked ? 1 : 0; updateStats(); });
+  D.fPlanets.addEventListener('change', () => { S.filters.planet = D.fPlanets.checked ? 1 : 0; updateStats(); });
+  D.chips.addEventListener('click', e => {
+    const ch = e.target.closest('.chip');
+    if (!ch) return;
+    const k = ch.getAttribute('data-c');
+    S.filters[k] = S.filters[k] ? 0 : 1;
+    ch.classList.toggle('on', !!S.filters[k]);
+    ch.setAttribute('aria-pressed', String(!!S.filters[k]));
+    updateStats();
+  });
+  D.bmList.addEventListener('click', e => {
+    const x = e.target.closest('.bm-x');
+    if (x){
+      const i = parseInt(x.getAttribute('data-x'), 10);
+      S.bookmarks.splice(i, 1);
+      saveBookmarks();
+      renderBookmarks();
+      return;
+    }
+    const row = e.target.closest('.bm');
+    if (row) goToBookmark(S.bookmarks[parseInt(row.getAttribute('data-i'), 10)]);
+  });
+
+  /* inspector */
+  D.rpBody.addEventListener('click', e => {
+    const b = e.target.closest('[data-action]');
+    if (!b) return;
+    const act = b.getAttribute('data-action');
+    if (act === 'bookmark' && S.sel && S.sel.kind === 'star'){ toggleBookmark(S.sel.st); updateInspector(); }
+    else if (act === 'bookmark-core'){ toggleBookmarkCore(); updateInspector(); }
+    else if (act === 'inspect'){ inspectCurrent(); }
+    else if (act === 'inspect-core'){ enterCore(); }
+    else if (act === 'back'){ exitSystem(); }
+    else if (act === 'random'){ discoverRandom(); }
+  });
+  D.btnSysBack.addEventListener('click', () => exitSystem());
+  document.querySelectorAll('.tbtn').forEach(b => b.addEventListener('click', () => {
+    S.timeScale = parseFloat(b.dataset.ts);
+    refreshTimeBtns();
+    if (S.sound) SND.play('tick');
+  }));
+
+  /* rotation */
+  D.rotSlider.addEventListener('input', () => {
+    const deg = parseFloat(D.rotSlider.value) * Math.PI / 180;
+    let d = deg - S.rot.target;
+    d = ((d % TAU) + TAU * 1.5) % TAU - Math.PI;
+    setRotation(S.rot.target + d);
+  });
+
+  /* palette */
+  D.palInput.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Escape') closePalette();
+    else if (e.key === 'ArrowDown'){ palIdx = Math.min(palItems.length - 1, palIdx + 1); renderPalList(D.palInput.value); }
+    else if (e.key === 'ArrowUp'){ palIdx = Math.max(0, palIdx - 1); renderPalList(D.palInput.value); }
+    else if (e.key === 'Enter'){ runPalItem(palItems[clamp(palIdx, 0, Math.max(0, palItems.length - 1))]); }
+    e.preventDefault();
+  });
+  D.palInput.addEventListener('input', () => { palIdx = 0; renderPalList(D.palInput.value); });
+  D.palList.addEventListener('click', e => {
+    const it = e.target.closest('.pal-item');
+    if (it){
+      const i = parseInt(it.getAttribute('data-i'), 10);
+      if (!isNaN(i) && palItems[i]) runPalItem(palItems[i]);
+    }
+  });
+  D.palWrap.addEventListener('pointerdown', e => { if (e.target === D.palWrap) closePalette(); });
+
+  /* keyboard */
+  window.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')){
+      e.preventDefault();
+      if (D.palWrap.classList.contains('hidden')) openPalette();
+      else closePalette();
+      return;
+    }
+    const t = e.target;
+    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+    if (typing) return;
+    let used = true;
+    switch (e.key){
+      case 'w': case 'W': case 'ArrowUp': S.keys.add('up'); if (e.key === 'ArrowUp') break;
+      case 's': case 'S': case 'ArrowDown': S.keys.add('down'); break;
+      case 'a': case 'A': case 'ArrowLeft': S.keys.add('left'); break;
+      case 'd': case 'D': case 'ArrowRight': S.keys.add('right'); break;
+      case '+': case '=':
+        {
+          const nz = clamp(S.cam.tz * 1.3, ZMIN, ZMAX);
+          const v = screenToView(W/2, H/2);
+          S.cam.tx = v[0]; S.cam.ty = v[1]; S.cam.tz = nz;
+          setStatus('ZOOM ' + Math.round(S.cam.tz / S.fit * 100) + '%');
+        }
+        break;
+      case '-': case '_':
+        {
+          const nz = clamp(S.cam.tz * 0.75, ZMIN, ZMAX);
+          const v = screenToView(W/2, H/2);
+          S.cam.tx = v[0]; S.cam.ty = v[1]; S.cam.tz = nz;
+          setStatus('ZOOM ' + Math.round(S.cam.tz / S.fit * 100) + '%');
+        }
+        break;
+      case '0': resetCam(); break;
+      case 'f': case 'F': focusSelected(); break;
+      case 'r': case 'R': regenerate(randomSeedString(), 'full'); break;
+      case 'm': case 'M': toggleMinimap(); break;
+      case 'l': case 'L': toggleLabels(); break;
+      case 'b': case 'B':
+        if (S.sel && S.sel.kind === 'star'){ toggleBookmark(S.sel.st); updateInspector(); }
+        else if (S.sel && S.sel.kind === 'core'){ toggleBookmarkCore(); updateInspector(); }
+        break;
+      case 't': case 'T': toggleTour(); break;
+      case 'c': case 'C': toggleCine(); break;
+      case 'Escape':
+        if (!D.palWrap.classList.contains('hidden')) closePalette();
+        else if (S.view === 'system') exitSystem();
+        else if (S.cine) toggleCine(false);
+        else clearSel();
+        break;
+      default: used = false;
+    }
+    if (used) e.preventDefault();
+    S.lastAct = performance.now();
+  });
+  window.addEventListener('keyup', e => {
+    switch (e.key){
+      case 'w': case 'W': case 'ArrowUp': S.keys.delete('up'); break;
+      case 's': case 'S': case 'ArrowDown': S.keys.delete('down'); break;
+      case 'a': case 'A': case 'ArrowLeft': S.keys.delete('left'); break;
+      case 'd': case 'D': case 'ArrowRight': S.keys.delete('right'); break;
+    }
+  });
+  window.addEventListener('blur', () => S.keys.clear());
+
+  /* resize */
+  let rsT = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(rsT);
+    rsT = setTimeout(() => sizeAll(), 150);
+  });
+}
+
+/* ================= 20 · REGENERATION & MAIN LOOP ================= */
+async function regenerate(seed, mode){
+  mode = mode || 'full';
+  if (S.generating) return;
+  S.generating = true;
+  seed = normalizeSeed(seed);
+  const wait = mode === 'first' ? 0 : (mode === 'fast' ? 320 : 820);
+  if (mode === 'full'){
+    D.scan.classList.add('show');
+    setStatus('SYNTHESIZING…');
+    if (S.sound) SND.play('gen');
+  }
+  await sleep(wait);
+  const old = S.gal;
+  const gal = generateGalaxy(seed);
+  buildGalaxyLayer(gal);
+  buildThumb(gal, gal.rot);
+  if (old && mode !== 'first') S.crossfade = { from: old.layer, t0: performance.now() };
+  S.gal = gal;
+  S.seed = seed;
+  safeSet('astra.seed.v1', seed);
+  S.sel = null; S.hover = null; S.pendingInspect = null; S.searchFlash = [];
+  hideTooltip();
+  if (S.view === 'system') exitSystem(true);
+  S.cam.tx = 0; S.cam.ty = 0; S.cam.tz = S.fit;
+  if (mode === 'first'){
+    S.cam.x = 0; S.cam.y = 0;
+    S.cam.z = REDUCED ? S.fit : S.fit * 0.62;
+  }
+  S.rot.target = gal.rot;
+  S.rot.cur = gal.rot;
+  const deg = Math.round(((gal.rot % TAU) + TAU) % TAU * 180 / Math.PI) % 360;
+  D.rotSlider.value = deg;
+  D.rotVal.textContent = String(deg).padStart(3, '0') + '°';
+  thumbDirty = true; lastThumb = 0;
+  buildBackground();
+  D.seedInput.value = seed;
+  D.tbSeed.textContent = seed;
+  D.tbStars.textContent = fmtInt(gal.stats.total);
+  D.tbTarget.textContent = '—';
+  D.searchInput.value = '';
+  D.searchResults.innerHTML = '';
+  updateStats();
+  renderBookmarks();
+  updateInspector();
+  if (mode === 'full') D.scan.classList.remove('show');
+  S.generating = false;
+  setStatus('STANDBY');
+  log('VOLUME ' + seed + ' SYNTHESIZED — ' + fmtInt(gal.stats.total) + ' STARS CHARTED', 'accent');
+  if (gal.anomNames.length) setTimeout(() => log('ANOMALOUS SPECTRAL SIGNATURE NEAR ' + gal.anomNames[0] + ' — FLAGGED FOR SURVEY', 'warn'), 700);
+}
+function buildChips(){
+  D.chips.innerHTML = CLASSES.map(c =>
+    '<button class="chip on" data-c="' + c.k + '" aria-pressed="true" aria-label="Toggle ' + c.k + ' class stars"><span class="dot" style="background:' + c.col + ';box-shadow:0 0 6px ' + c.col + '"></span>' + c.k + '</button>'
+  ).join('');
+}
+let fpsAcc = 0, fpsN = 0, fpsTimer = 0;
+function qualityAdapt(fps){
+  if (fps < 28 && S.quality > 0) S.quality--;
+  else if (fps > 55 && S.quality < 2) S.quality++;
+}
+let raf = 0, lastT = 0;
+function frame(now){
+  raf = requestAnimationFrame(frame);
+  let dt = (now - lastT) / 1000;
+  lastT = now;
+  if (dt > 0.1) dt = 0.1;
+  fpsAcc += dt; fpsN++;
+  if (now - fpsTimer > 500){
+    if (fpsAcc > 0.001){
+      D.bbFps.textContent = String(Math.min(999, Math.round(fpsN / fpsAcc)));
+      qualityAdapt(Math.round(fpsN / fpsAcc));
+    }
+    fpsAcc = 0; fpsN = 0; fpsTimer = now;
+  }
+  S.intro = Math.min(1, (now - S.t0) / 2200);
+  S.simT += dt * S.timeScale;
+  if (thumbDirty && now - lastThumb > 250){
+    lastThumb = now;
+    if (S.gal) buildThumb(S.gal, S.rot.target);
+    thumbDirty = false;
+  }
+  if (S.view === 'galaxy'){
+    camUpdate(dt);
+    renderGalaxy(now);
+    updateMinimap();
+    if (S.tour && !S.transit && !S.generating && now - S.lastTour > 9000){
+      S.lastTour = now;
+      discoverRandom();
+    }
+    if (now - S.lastAmbient > 50000 + S.ambJit){
+      S.lastAmbient = now;
+      S.ambJit = Math.random() * 40000;
+      ambientLog();
+    }
+    updateHUD();
+  } else {
+    if (S.sys) sysCamUpdate(dt);
+    renderSys(now);
+    updateHUD();
+  }
+}
+function init(){
+  if (init.done) return;
+  init.done = true;
+  D.bctx = D.bg.getContext('2d');
+  D.ctx = D.main.getContext('2d');
+  D.sctx = D.sys.getContext('2d');
+  D.mctx = D.mm.getContext('2d');
+  buildSprites();
+  buildExtraSprites();
+  S.seed = safeGet('astra.seed.v1') || 'ASTRA-74291';
+  loadBookmarks();
+  sizeAll();
+  buildChips();
+  bindAll();
+  if (W < 1180) togglePanel(false);
+  D.seedInput.value = S.seed;
+  S.t0 = performance.now();
+  S.lastAmbient = S.t0;
+  lastT = S.t0;
+  fpsTimer = S.t0;
+  regenerate(S.seed, 'first');
+  raf = requestAnimationFrame(frame);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) cancelAnimationFrame(raf);
+    else { lastT = performance.now(); raf = requestAnimationFrame(frame); }
+  });
+}
+init();
+})();
+</script>
+</body>
+</html>
+
+							<script>
+                            	
+							</script>
+                        </body>
+                        </html>
+                    

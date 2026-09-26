@@ -1,0 +1,1042 @@
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+							<style>
+								body {
+									background-color: white; /* Ensure the iframe has a white background */
+								}
+
+								
+							</style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Conway's Game of Life</title>
+<style>
+  /* ---------- Design tokens ---------- */
+  :root {
+    --bg: #0b0e14;
+    --panel: #12161f;
+    --panel-2: #171c27;
+    --border: #232a38;
+    --text: #e7ebf3;
+    --muted: #8b93a7;
+    --accent: #34d399;
+    --accent-bright: #6ee7b7;
+    --accent-dim: rgba(52, 211, 153, 0.14);
+    --danger: #f87171;
+    --cell: #34d399;
+    --cell-new: #86efac;
+    --grid-line: rgba(148, 163, 184, 0.08);
+    --canvas-bg: #0d1119;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    /* Prevent text selection while drawing */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.2px; }
+  .brand .sub { font-size: 12px; color: var(--muted); }
+
+  .stats { display: flex; gap: 8px; }
+
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 7px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 86px;
+  }
+  .stat .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .stat .value { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat.gen .value { color: var(--accent-bright); }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+  }
+
+  .btn-group { display: flex; gap: 7px; flex-wrap: wrap; }
+
+  button {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background 0.12s, border-color 0.12s, color 0.12s, box-shadow 0.12s;
+    white-space: nowrap;
+  }
+  button:hover { background: #1d2433; border-color: #2e3648; }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  button .kbd {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    background: rgba(0,0,0,0.25);
+  }
+
+  button.primary {
+    background: var(--accent-dim);
+    border-color: rgba(52, 211, 153, 0.45);
+    color: var(--accent-bright);
+    min-width: 118px;
+    justify-content: center;
+  }
+  button.primary:hover { background: rgba(52, 211, 153, 0.22); border-color: rgba(52, 211, 153, 0.65); }
+
+  /* Visually obvious running state */
+  body.running button.primary {
+    background: var(--accent);
+    color: #06281c;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.18), 0 0 18px rgba(52, 211, 153, 0.25);
+  }
+  body.running button.primary:hover { background: var(--accent-bright); }
+
+  .sep { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
+
+  /* ---------- Sliders & toggles ---------- */
+  .control { display: flex; align-items: center; gap: 9px; }
+  .control label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .control .readout {
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    min-width: 44px;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 110px;
+    height: 4px;
+    border-radius: 2px;
+    background: #2a3245;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid #0b0e14;
+    box-shadow: 0 0 0 1px rgba(52,211,153,0.4);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid #0b0e14;
+    box-shadow: 0 0 0 1px rgba(52,211,153,0.4);
+  }
+  input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* Custom toggle switch */
+  .toggle {
+    position: relative;
+    width: 38px; height: 21px;
+    border-radius: 11px;
+    background: #2a3245;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 15px; height: 15px;
+    border-radius: 50%;
+    background: #94a3b8;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .toggle.on { background: var(--accent-dim); border-color: rgba(52,211,153,0.5); }
+  .toggle.on::after { transform: translateX(17px); background: var(--accent); }
+  .toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  select {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+  select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Stage / canvas ---------- */
+  .stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    background: var(--canvas-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .stage canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;   /* allow drawing without scrolling on touch */
+    cursor: crosshair;
+  }
+
+  .hint {
+    position: absolute;
+    left: 12px;
+    bottom: 10px;
+    font-size: 11px;
+    color: var(--muted);
+    background: rgba(11, 14, 20, 0.72);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 10px;
+    pointer-events: none;
+    backdrop-filter: blur(2px);
+    white-space: nowrap;
+  }
+  .hint b { color: var(--text); font-weight: 600; }
+
+  .status-dot {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: rgba(11, 14, 20, 0.72);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 5px 10px;
+    pointer-events: none;
+  }
+  .status-dot .dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; }
+  body.running .status-dot .dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  body.running .status-dot { color: var(--accent-bright); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 720px) {
+    .app { padding: 8px; gap: 8px; }
+    .brand .sub { display: none; }
+    .toolbar { gap: 10px; }
+    .sep { display: none; }
+    .stats { width: 100%; justify-content: space-between; }
+    .stat { flex: 1; min-width: 0; }
+    button .kbd { display: none; }
+    input[type="range"] { width: 84px; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+
+    <header>
+      <div class="brand">
+        <h1>Game of Life</h1>
+        <span class="sub">Conway · B3/S23</span>
+      </div>
+      <div class="stats">
+        <div class="stat gen">
+          <span class="label">Generation</span>
+          <span class="value" id="stat-gen">0</span>
+        </div>
+        <div class="stat">
+          <span class="label">Population</span>
+          <span class="value" id="stat-pop">0</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="btn-group">
+        <button id="btn-play" class="primary" aria-pressed="false">
+          <span id="play-icon">&#9654;</span><span id="play-label">Play</span><span class="kbd">Space</span>
+        </button>
+        <button id="btn-step">Step <span class="kbd">N</span></button>
+        <button id="btn-clear">Clear <span class="kbd">C</span></button>
+        <button id="btn-random">Randomize <span class="kbd">R</span></button>
+        <button id="btn-reset">Reset</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="control">
+        <label for="speed">Speed</label>
+        <input type="range" id="speed" min="1" max="120" step="1" value="15" aria-label="Simulation speed in generations per second">
+        <span class="readout" id="speed-readout">15/s</span>
+      </div>
+
+      <div class="control">
+        <label for="cellsize">Cell size</label>
+        <input type="range" id="cellsize" min="2" max="32" step="1" value="10" aria-label="Cell size in pixels">
+        <span class="readout" id="cellsize-readout">10px</span>
+      </div>
+
+      <div class="control">
+        <label id="wrap-label">Wrap edges</label>
+        <div class="toggle on" id="wrap-toggle" role="switch" aria-checked="true" aria-labelledby="wrap-label" tabindex="0"></div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="control">
+        <label for="preset">Preset</label>
+        <select id="preset" aria-label="Preset pattern">
+          <option value="" disabled selected>Choose…</option>
+          <option value="glider">Glider</option>
+          <option value="lwss">Lightweight spaceship</option>
+          <option value="pulsar">Pulsar</option>
+          <option value="gun">Gosper glider gun</option>
+        </select>
+      </div>
+    </div>
+
+    <main class="stage" id="stage">
+      <canvas id="board"></canvas>
+      <div class="status-dot"><span class="dot"></span><span id="status-text">Paused</span></div>
+      <div class="hint"><b>Click / drag</b> to draw · right-drag or Shift-drag to erase · <b>Space</b> play · <b>N</b> step · <b>C</b> clear · <b>R</b> random</div>
+    </main>
+
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ======================================================================
+   * 1. Preset patterns
+   *    Each pattern is an array of strings: '#' = live cell, '.' = dead.
+   * =================================================================== */
+  const PATTERNS = {
+    glider: [
+      ".#.",
+      "..#",
+      "###"
+    ],
+    lwss: [
+      ".##..",
+      "#....",
+      "#....",
+      ".###."
+    ],
+    pulsar: [
+      "..###...###..",
+      ".............",
+      ".............",
+      "###..###..###",
+      "###..###..###",
+      "###..###..###",
+      "..###...###..",
+      ".............",
+      "###..###..###",
+      "###..###..###",
+      "###..###..###",
+      "..###...###..",
+      "............."
+    ],
+    gun: [
+      "........................O...........",
+      "....................O.O...........",
+      "............O......O............O...",
+      "...........O...........O........O...",
+      "OO........O...O....O........O.......",
+      "OO........O...O....O.........O......",
+      "............O.......O.O..O........O.",
+      ".............O.......O.......O.O....",
+      "..............O..............O......"
+    ]
+  };
+
+  /* ======================================================================
+   * 2. Simulation state
+   *    The world is a flat Uint8Array (0 = dead, 1 = live) plus a parallel
+   *    Uint8Array of cell ages (1 = just born). Two buffers are swapped
+   *    every step so the source generation is never mutated mid-compute.
+   * =================================================================== */
+  const state = {
+    cols: 0,
+    rows: 0,
+    current: new Uint8Array(0),
+    next: new Uint8Array(0),
+    age: new Uint8Array(0),       // 0 dead, 1 newborn, 2+ established
+    nextAge: new Uint8Array(0),
+    generation: 0,
+    population: 0,
+    running: false,
+    wrap: true,
+    speed: 15,                   // generations per second
+    cellSize: 10                 // CSS pixels per cell
+  };
+
+  // Snapshot restored by the Reset button.
+  let snapshot = null;
+
+  /* ======================================================================
+   * 3. DOM references
+   * =================================================================== */
+  const $ = (id) => document.getElementById(id);
+  const canvas = $("board");
+  const ctx = canvas.getContext("2d");
+  const stage = $("stage");
+  const statGen = $("stat-gen");
+  const statPop = $("stat-pop");
+  const btnPlay = $("btn-play");
+  const btnStep = $("btn-step");
+  const btnClear = $("btn-clear");
+  const btnRandom = $("btn-random");
+  const btnReset = $("btn-reset");
+  const speedSlider = $("speed");
+  const speedReadout = $("speed-readout");
+  const cellSlider = $("cellsize");
+  const cellReadout = $("cellsize-readout");
+  const wrapToggle = $("wrap-toggle");
+  const presetSelect = $("preset");
+  const statusText = $("status-text");
+
+  // Offscreen canvas holding the static background + grid lines so we don't
+  // redraw them every animation frame (avoids unnecessary work).
+  const gridCanvas = document.createElement("canvas");
+  const gridCtx = gridCanvas.getContext("2d");
+
+  /* ======================================================================
+   * 4. Grid helpers
+   * =================================================================== */
+
+  /** (Re)size the world to fit the visible canvas at the current cell size.
+   *  Existing cells in the overlapping region are preserved. */
+  function resizeWorld() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = stage.getBoundingClientRect();
+
+    // Configure the visible canvas for high-DPI displays.
+    const cssW = Math.max(1, Math.floor(rect.width));
+    const cssH = Math.max(1, Math.floor(rect.height));
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const newCols = Math.max(4, Math.floor(cssW / state.cellSize));
+    const newRows = Math.max(4, Math.floor(cssH / state.cellSize));
+
+    if (newCols !== state.cols || newRows !== state.rows) {
+      const old = state.current;
+      const oldCols = state.cols;
+      const oldRows = state.rows;
+
+      state.cols = newCols;
+      state.rows = newRows;
+      state.current = new Uint8Array(state.cols * state.rows);
+      state.next = new Uint8Array(state.cols * state.rows);
+      state.age = new Uint8Array(state.cols * state.rows);
+      state.nextAge = new Uint8Array(state.cols * state.rows);
+
+      // Copy the overlapping top-left region of the old world.
+      if (old.length) {
+        const copyRows = Math.min(oldRows, state.rows);
+        const copyCols = Math.min(oldCols, state.cols);
+        for (let y = 0; y < copyRows; y++) {
+          for (let x = 0; x < copyCols; x++) {
+            const src = y * oldCols + x;
+            const dst = y * state.cols + x;
+            state.current[dst] = old[src];
+            state.age[dst] = state.age[y * oldCols + x] || 0;
+          }
+        }
+      }
+
+      recountPopulation();
+      buildGridLayer(cssW, cssH);
+      requestRender();
+    } else {
+      buildGridLayer(cssW, cssH);
+      requestRender();
+    }
+  }
+
+  /** Write cell (x, y) to 0/1, updating the population counter in place. */
+  function setCell(x, y, val) {
+    if (x < 0 || y < 0 || x >= state.cols || y >= state.rows) return;
+    const i = y * state.cols + x;
+    const v = val ? 1 : 0;
+    if (state.current[i] !== v) {
+      state.current[i] = v;
+      state.population += v ? 1 : -1;
+      state.age[i] = v ? 1 : 0;
+    }
+  }
+
+  function clearWorld() {
+    state.current.fill(0);
+    state.age.fill(0);
+    state.generation = 0;
+    state.population = 0;
+    updateStats();
+    requestRender();
+  }
+
+  function recountPopulation() {
+    let p = 0;
+    const c = state.current;
+    for (let i = 0; i < c.length; i++) p += c[i];
+    state.population = p;
+  }
+
+  function randomizeWorld(density = 0.22) {
+    const c = state.current;
+    for (let i = 0; i < c.length; i++) {
+      c[i] = Math.random() < density ? 1 : 0;
+      state.age[i] = c[i] ? 1 : 0;
+    }
+    state.generation = 0;
+    recountPopulation();
+    snapshot = { current: state.current.slice(), age: state.age.slice() };
+    updateStats();
+    requestRender();
+  }
+
+  /** Stamp a preset pattern centered on the board (clears first). */
+  function loadPattern(key) {
+    const pattern = PATTERNS[key];
+    if (!pattern) return;
+    clearWorld();
+
+    const ph = pattern.length;
+    const pw = Math.max(...pattern.map((r) => r.length));
+    // Center, biased slightly up/left so moving patterns have room.
+    let ox = Math.floor((state.cols - pw) / 2);
+    let oy = Math.floor((state.rows - ph) / 2) - Math.floor(ph / 4);
+    if (ox < 0) ox = 0;
+    if (oy < 0) oy = 0;
+
+    for (let y = 0; y < ph; y++) {
+      const row = pattern[y];
+      for (let x = 0; x < row.length; x++) {
+        if (row[x] === "#" || row[x] === "O") {
+          setCell(ox + x, oy + y, 1);
+          state.age[(oy + y) * state.cols + (ox + x)] = 1;
+        }
+      }
+    }
+    // A fresh pattern is the new "initial state" for Reset.
+    snapshot = { current: state.current.slice(), age: state.age.slice() };
+    updateStats();
+    requestRender();
+  }
+
+  function resetWorld() {
+    if (!snapshot || snapshot.current.length !== state.current.length) return;
+    state.current.set(snapshot.current);
+    state.age.set(snapshot.age);
+    state.generation = 0;
+    recountPopulation();
+    updateStats();
+    requestRender();
+  }
+
+  /* ======================================================================
+   * 5. Rule engine — standard Conway B3/S23 with two-buffer stepping.
+   *    Neighbor counting uses precomputed row/col neighbors per row so the
+   *    inner loop is tight; boundary handling supports both rectangular
+   *    (no wrap) and toroidal (wrap) edges. Exactly 8 neighbors counted.
+   * =================================================================== */
+  function stepOnce() {
+    const cols = state.cols;
+    const rows = state.rows;
+    const cur = state.current;
+    const nxt = state.next;
+    const age = state.age;
+    const nxtAge = state.nextAge;
+    const wrap = state.wrap;
+
+    for (let y = 0; y < rows; y++) {
+      const rowUp = wrap ? (y - 1 + rows) % rows : (y > 0 ? y - 1 : -1);
+      const rowMid = y;
+      const rowDn = wrap ? (y + 1) % rows : (y < rows - 1 ? y + 1 : -1);
+      const offUp = rowUp * cols;
+      const offMid = rowMid * cols;
+      const offDn = rowDn * cols;
+
+      for (let x = 0; x < cols; x++) {
+        const left = wrap ? (x - 1 + cols) % cols : (x > 0 ? x - 1 : -1);
+        const right = wrap ? (x + 1) % cols : (x < cols - 1 ? x + 1 : -1);
+
+        let n = 0;
+        if (rowUp >= 0) {
+          if (left >= 0) n += cur[offUp + left];
+          n += cur[offUp + x];
+          if (right >= 0) n += cur[offUp + right];
+        }
+        if (left >= 0) n += cur[offMid + left];
+        if (right >= 0) n += cur[offMid + right];
+        if (rowDn >= 0) {
+          if (left >= 0) n += cur[offDn + left];
+          n += cur[offDn + x];
+          if (right >= 0) n += cur[offDn + right];
+        }
+
+        const i = offMid + x;
+        const alive = cur[i];
+        let v;
+        if (alive) {
+          v = (n === 2 || n === 3) ? 1 : 0;
+        } else {
+          v = (n === 3) ? 1 : 0;
+        }
+        nxt[i] = v;
+        nxtAge[i] = v ? (alive ? (age[i] < 250 ? age[i] + 1 : 250) : 1) : 0;
+      }
+    }
+
+    // Swap buffers: the generation we just computed becomes "current".
+    state.current = nxt;
+    state.next = cur;
+    state.age = nxtAge;
+    state.nextAge = age;
+    state.generation++;
+
+    recountPopulation();
+    updateStats();
+  }
+
+  /* ======================================================================
+   * 6. Rendering
+   *    - A static background + grid-line layer is pre-rendered once per
+   *      resize (offscreen canvas) and blitted every frame.
+   *    - Live cells are drawn on top; newborn cells use a slightly
+   *      brighter tint so motion is easy to read, but nothing is flashy.
+   * =================================================================== */
+  let renderRequested = false;
+
+  function requestRender() {
+    renderRequested = true;
+  }
+
+  function buildGridLayer(cssW, cssH) {
+    const dpr = window.devicePixelRatio || 1;
+    gridCanvas.width = Math.round(cssW * dpr);
+    gridCanvas.height = Math.round(cssH * dpr);
+    gridCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    gridCtx.fillStyle = "#0d1119";
+    gridCtx.fillRect(0, 0, cssW, cssH);
+
+    const size = state.cellSize;
+    // Skip grid lines when cells are too small to draw them legibly.
+    if (size >= 5) {
+      gridCtx.strokeStyle = "rgba(148, 163, 184, 0.08)";
+      gridCtx.lineWidth = 1;
+      gridCtx.beginPath();
+      for (let x = 0; x <= state.cols; x++) {
+        const px = Math.round(x * size) + 0.5;
+        gridCtx.moveTo(px, 0);
+        gridCtx.lineTo(px, Math.round(state.rows * size));
+      }
+      for (let y = 0; y <= state.rows; y++) {
+        const py = Math.round(y * size) + 0.5;
+        gridCtx.moveTo(0, py);
+        gridCtx.lineTo(Math.round(state.cols * size), py);
+      }
+      gridCtx.stroke();
+    }
+  }
+
+  function render() {
+    renderRequested = false;
+    const size = state.cellSize;
+    const dpr = window.devicePixelRatio || 1;
+
+    // Blit the cached background/grid layer.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(gridCanvas, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const cur = state.current;
+    const age = state.age;
+    const cols = state.cols;
+
+    const gap = size >= 5 ? 1 : 0; // 1px gap between cells when there is room
+
+    // Newborn cells (age 1) — drawn first, slightly brighter.
+    ctx.fillStyle = "#86efac";
+    for (let i = 0, y = 0, row = 0; i < cur.length; i++, row++) {
+      if (row === cols) { row = 0; y++; }
+      if (cur[i] && age[i] === 1) {
+        ctx.fillRect(row * size + gap, y * size + gap, size - gap * 2, size - gap * 2);
+      }
+    }
+    // Established cells (age >= 2).
+    ctx.fillStyle = "#34d399";
+    for (let i = 0, y = 0, row = 0; i < cur.length; i++, row++) {
+      if (row === cols) { row = 0; y++; }
+      if (cur[i] && age[i] > 1) {
+        ctx.fillRect(row * size + gap, y * size + gap, size - gap * 2, size - gap * 2);
+      }
+    }
+  }
+
+  /* ======================================================================
+   * 7. Statistics — DOM is only touched when values actually change.
+   * =================================================================== */
+  let lastGenShown = -1;
+  let lastPopShown = -1;
+
+  function updateStats() {
+    if (state.generation !== lastGenShown) {
+      lastGenShown = state.generation;
+      statGen.textContent = String(state.generation);
+    }
+    if (state.population !== lastPopShown) {
+      lastPopShown = state.population;
+      statPop.textContent = String(state.population);
+    }
+  }
+
+  /* ======================================================================
+   * 8. Play / pause
+   * =================================================================== */
+  function setRunning(run) {
+    state.running = run;
+    document.body.classList.toggle("running", run);
+    btnPlay.setAttribute("aria-pressed", String(run));
+    $("play-icon").innerHTML = run ? "&#10074;&#10074;" : "&#9654;";
+    $("play-label").textContent = run ? "Pause" : "Play";
+    statusText.textContent = run ? "Running" : "Paused";
+    if (run) {
+      accTime = 0; // avoid a burst of catch-up steps after a long pause
+    }
+  }
+
+  /* ======================================================================
+   * 9. Main loop
+   *    The simulation runs at a fixed rate independent of display
+   *    refresh: real elapsed time accumulates and whole generations are
+   *    stepped off the accumulator (bounded per frame so a heavy board
+   *    can never wedge the UI). Rendering only happens when something
+   *    changed.
+   * =================================================================== */
+  let lastFrameTime = 0;
+  let accTime = 0;
+
+  function frame(now) {
+    if (state.running) {
+      let dt = now - lastFrameTime;
+      // Clamp so a backgrounded tab doesn't trigger a huge catch-up burst.
+      if (dt > 250) dt = 250;
+      accTime += dt;
+      const interval = 1000 / state.speed;
+
+      // At most 4 generations per frame keeps the UI responsive on
+      // large boards even if a step costs more than one frame.
+      let steps = 0;
+      while (accTime >= interval && steps < 4) {
+        stepOnce();
+        accTime -= interval;
+        steps++;
+      }
+      if (steps > 0) requestRender();
+      if (accTime > interval) accTime = interval; // drop excess backlog
+    }
+
+    if (renderRequested) render();
+
+    lastFrameTime = now;
+    requestAnimationFrame(frame);
+  }
+
+  /* ======================================================================
+   * 10. Pointer drawing (mouse, touch, pen via Pointer Events)
+   *      - First cell of a stroke decides draw vs erase (right-drag or
+   *        Shift always erases).
+   *      - The path between pointer samples is interpolated so fast
+   *        drags don't leave gaps.
+   * =================================================================== */
+  let pointerActive = false;
+  let strokeValue = 1;
+  let lastCellX = -1;
+  let lastCellY = -1;
+
+  function eventToCell(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) / state.cellSize);
+    const y = Math.floor((e.clientY - rect.top) / state.cellSize);
+    return { x, y };
+  }
+
+  function paintCell(x, y) {
+    setCell(x, y, strokeValue);
+  }
+
+  /** Fill every cell on the straight line between (x0,y0) and (x1,y1). */
+  function paintLine(x0, y0, x1, y1) {
+    let dx = x1 - x0, dy = y1 - y0;
+    const steps = Math.max(Math.abs(dx), Math.abs(dy));
+    if (steps === 0) { paintCell(x0, y0); return; }
+    for (let s = 0; s <= steps; s++) {
+      paintCell(
+        Math.round(x0 + dx * (s / steps)),
+        Math.round(y0 + dy * (s / steps))
+      );
+    }
+  }
+
+  canvas.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    pointerActive = true;
+
+    const erase = e.button === 2 || e.shiftKey;
+    const { x, y } = eventToCell(e);
+
+    if (!erase) {
+      // Determine mode from the cell we land on: live → erase, dead → draw.
+      const i = (y >= 0 && y < state.rows && x >= 0 && x < state.cols)
+        ? y * state.cols + x : -1;
+      strokeValue = (i >= 0 && state.current[i] === 1) ? 0 : 1;
+    } else {
+      strokeValue = 0;
+    }
+
+    lastCellX = x;
+    lastCellY = y;
+    paintCell(x, y);
+    updateStats();
+    requestRender();
+  });
+
+  canvas.addEventListener("pointermove", (e) => {
+    if (!pointerActive) return;
+    e.preventDefault();
+    const { x, y } = eventToCell(e);
+    if (x === lastCellX && y === lastCellY) return;
+    paintLine(lastCellX, lastCellY, x, y);
+    lastCellX = x;
+    lastCellY = y;
+    updateStats();
+    requestRender();
+  });
+
+  function endStroke(e) {
+    if (!pointerActive) return;
+    pointerActive = false;
+    try { canvas.releasePointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+  }
+  canvas.addEventListener("pointerup", endStroke);
+  canvas.addEventListener("pointercancel", endStroke);
+
+  // Right-click is our erase gesture; keep the context menu away.
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  /* ======================================================================
+   * 11. Control wiring
+   * =================================================================== */
+  btnPlay.addEventListener("click", () => { setRunning(!state.running); btnPlay.blur(); });
+
+  btnStep.addEventListener("click", () => {
+    setRunning(false);
+    stepOnce();
+    requestRender();
+    btnStep.blur();
+  });
+
+  btnClear.addEventListener("click", () => {
+    setRunning(false);
+    clearWorld();
+    snapshot = null;
+    btnClear.blur();
+  });
+
+  btnRandom.addEventListener("click", () => {
+    setRunning(false);
+    randomizeWorld();
+    btnRandom.blur();
+  });
+
+  btnReset.addEventListener("click", () => {
+    setRunning(false);
+    resetWorld();
+    btnReset.blur();
+  });
+
+  speedSlider.addEventListener("input", () => {
+    state.speed = Number(speedSlider.value);
+    speedReadout.textContent = state.speed + "/s";
+  });
+
+  cellSlider.addEventListener("input", () => {
+    state.cellSize = Number(cellSlider.value);
+    cellReadout.textContent = state.cellSize + "px";
+    resizeWorld();
+  });
+
+  function setWrap(on) {
+    state.wrap = on;
+    wrapToggle.classList.toggle("on", on);
+    wrapToggle.setAttribute("aria-checked", String(on));
+  }
+  wrapToggle.addEventListener("click", () => { setWrap(!state.wrap); wrapToggle.blur(); });
+  wrapToggle.addEventListener("keydown", (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      setWrap(!state.wrap);
+    }
+  });
+
+  presetSelect.addEventListener("change", () => {
+    const key = presetSelect.value;
+    if (key) loadPattern(key);
+    presetSelect.value = ""; // keep it a one-shot picker
+  });
+
+  /* ======================================================================
+   * 12. Keyboard shortcuts
+   *      Space = play/pause, N = step, C = clear, R = randomize.
+   *      Ignored while a form control has focus (except our own toggle).
+   * =================================================================== */
+  window.addEventListener("keydown", (e) => {
+    const t = e.target;
+    const tag = t && t.tagName;
+    if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") {
+      if (t === wrapToggle) return; // handled by its own listener
+      if (e.key === "Escape") t.blur();
+      return;
+    }
+
+    switch (e.key) {
+      case " ":
+        e.preventDefault();           // stop page scroll / button activation
+        setRunning(!state.running);
+        break;
+      case "n": case "N":
+        if (e.repeat) return;
+        setRunning(false);
+        stepOnce();
+        requestRender();
+        break;
+      case "c": case "C":
+        if (e.repeat) return;
+        setRunning(false);
+        clearWorld();
+        snapshot = null;
+        break;
+      case "r": case "R":
+        if (e.repeat) return;
+        setRunning(false);
+        randomizeWorld();
+        break;
+    }
+  });
+
+  /* ======================================================================
+   * 13. Resize handling
+   * =================================================================== */
+  let resizeScheduled = false;
+  function onResize() {
+    if (resizeScheduled) return;
+    resizeScheduled = true;
+    requestAnimationFrame(() => {
+      resizeScheduled = false;
+      resizeWorld();
+    });
+  }
+  window.addEventListener("resize", onResize);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", onResize);
+
+  /* ======================================================================
+   * 14. Boot
+   * =================================================================== */
+  function boot() {
+    resizeWorld();
+    randomizeWorld();          // start with a lively board
+    setRunning(true);         // hit the ground running
+    lastFrameTime = performance.now();
+    requestAnimationFrame(frame);
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
+
+							<script>
+                            	
+							</script>
+                        </body>
+                        </html>
+                    
